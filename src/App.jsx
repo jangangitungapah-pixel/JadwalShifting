@@ -1,0 +1,305 @@
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import Sidebar from './components/Sidebar';
+import Dashboard from './components/Dashboard';
+import EmployeeList from './components/EmployeeList';
+import CalendarView from './components/CalendarView';
+import SettingsView from './components/Settings';
+import Reports from './components/Reports';
+import AnalyticsView from './components/AnalyticsView';
+import LeaveManagement from './components/LeaveManagement';
+import AuditLog from './components/AuditLog';
+import LoginGate from './components/LoginGate';
+import { initialEmployees, initialShifts } from './utils/dummyData';
+import { createUndoManager } from './utils/undoManager';
+import { saveVersion, startAutoBackup, stopAutoBackup } from './utils/versionHistory';
+import { requestNotificationPermission, notifyScheduleChange } from './utils/notifications';
+import './App.css';
+
+function App() {
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [employees, setEmployees] = useState([]);
+  const [shifts, setShifts] = useState({});
+  const [activityLogs, setActivityLogs] = useState([]);
+  const [theme, setTheme] = useState(() => localStorage.getItem('shift_theme') || 'dark');
+  const [notes, setNotes] = useState(() => { try { return JSON.parse(localStorage.getItem('shift_notes') || '{}'); } catch { return {}; } });
+  const [leaves, setLeaves] = useState(() => { try { return JSON.parse(localStorage.getItem('shift_leaves') || '[]'); } catch { return []; } });
+  const [swapRequests, setSwapRequests] = useState(() => { try { return JSON.parse(localStorage.getItem('shift_swaps') || '[]'); } catch { return []; } });
+  const [departments, setDepartments] = useState(() => { try { return JSON.parse(localStorage.getItem('shift_departments') || '["Umum"]'); } catch { return ['Umum']; } });
+  const [notificationsEnabled, setNotificationsEnabled] = useState(() => localStorage.getItem('shift_notif') === 'true');
+
+  const [autoHolidayEnabled, setAutoHolidayEnabled] = useState(() => {
+    const saved = localStorage.getItem('shift_auto_holiday');
+    return saved ? JSON.parse(saved) : false;
+  });
+  const [cutOffDate, setCutOffDate] = useState(() => {
+    const saved = localStorage.getItem('shift_cutoff_date');
+    return saved ? parseInt(saved, 10) : 31;
+  });
+  const [incentiveAmount, setIncentiveAmount] = useState(() => {
+    const saved = localStorage.getItem('shift_incentive_amount');
+    return saved ? parseInt(saved, 10) : 50000;
+  });
+  const [holidayIncentiveAmount, setHolidayIncentiveAmount] = useState(() => {
+    const saved = localStorage.getItem('shift_holiday_incentive_amount');
+    return saved ? parseInt(saved, 10) : 100000;
+  });
+  const [spIncentiveAmount, setSpIncentiveAmount] = useState(() => {
+    const saved = localStorage.getItem('shift_sp_incentive_amount');
+    return saved ? parseInt(saved, 10) : 100000;
+  });
+  const [holidays, setHolidays] = useState([]);
+  const [customHolidays, setCustomHolidays] = useState(() => {
+    const saved = localStorage.getItem('shift_custom_holidays');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Undo manager
+  const undoRef = useRef(null);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+
+  // Theme effect
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('shift_theme', theme);
+  }, [theme]);
+
+  // Initialize data
+  useEffect(() => {
+    const storedEmployees = localStorage.getItem('shift_employees');
+    const storedShifts = localStorage.getItem('shift_data');
+    const storedLogs = localStorage.getItem('shift_logs');
+
+    const emps = storedEmployees ? JSON.parse(storedEmployees) : initialEmployees;
+    const shts = storedShifts ? JSON.parse(storedShifts) : initialShifts;
+
+    setEmployees(emps);
+    setShifts(shts);
+    if (!storedEmployees) localStorage.setItem('shift_employees', JSON.stringify(initialEmployees));
+    if (!storedShifts) localStorage.setItem('shift_data', JSON.stringify(initialShifts));
+    if (storedLogs) setActivityLogs(JSON.parse(storedLogs));
+
+    // Initialize undo manager
+    undoRef.current = createUndoManager(shts);
+
+    // Fetch holidays
+    const currYear = new Date().getFullYear();
+    Promise.all([
+      fetch(`https://date.nager.at/api/v3/PublicHolidays/${currYear - 1}/ID`).then(r => r.ok ? r.json() : []),
+      fetch(`https://date.nager.at/api/v3/PublicHolidays/${currYear}/ID`).then(r => r.ok ? r.json() : []),
+      fetch(`https://date.nager.at/api/v3/PublicHolidays/${currYear + 1}/ID`).then(r => r.ok ? r.json() : [])
+    ]).then(([prev, curr, next]) => setHolidays([...prev, ...curr, ...next]))
+    .catch(err => console.error("Failed to fetch holidays:", err));
+
+    // Auto-backup
+    const autoBackupEnabled = localStorage.getItem('shift_auto_backup') !== 'false';
+    if (autoBackupEnabled) {
+      startAutoBackup(() => {
+        try { return JSON.parse(localStorage.getItem('shift_data') || '{}'); } catch { return {}; }
+      }, 300000);
+    }
+
+    // Request notifications
+    if (localStorage.getItem('shift_notif') === 'true') requestNotificationPermission();
+
+    return () => stopAutoBackup();
+  }, []);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.ctrlKey && e.key === 'z') { e.preventDefault(); handleUndo(); }
+      else if (e.ctrlKey && e.key === 'y') { e.preventDefault(); handleRedo(); }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [shifts]);
+
+  const allHolidays = [
+    ...holidays,
+    ...customHolidays.map(h => ({ date: h.date, localName: h.localName, name: h.localName, isCustom: true }))
+  ];
+
+  const addLog = (message) => {
+    const newLog = { id: Date.now().toString(), message, timestamp: new Date().toISOString() };
+    const updatedLogs = [newLog, ...activityLogs].slice(0, 100);
+    setActivityLogs(updatedLogs);
+    localStorage.setItem('shift_logs', JSON.stringify(updatedLogs));
+  };
+
+  const toggleAutoHoliday = () => {
+    const newVal = !autoHolidayEnabled;
+    setAutoHolidayEnabled(newVal);
+    localStorage.setItem('shift_auto_holiday', JSON.stringify(newVal));
+    addLog(`Fitur Auto-Libur Nasional ${newVal ? 'diaktifkan' : 'dinonaktifkan'}`);
+  };
+
+  const updateSettings = (newCutOff, newIncentive, newHolidayIncentive, newSpIncentive) => {
+    setCutOffDate(newCutOff); setIncentiveAmount(newIncentive);
+    setHolidayIncentiveAmount(newHolidayIncentive); setSpIncentiveAmount(newSpIncentive);
+    localStorage.setItem('shift_cutoff_date', newCutOff);
+    localStorage.setItem('shift_incentive_amount', newIncentive);
+    localStorage.setItem('shift_holiday_incentive_amount', newHolidayIncentive);
+    localStorage.setItem('shift_sp_incentive_amount', newSpIncentive);
+    addLog(`Pengaturan insentif & cut-off diperbarui`);
+  };
+
+  const addCustomHoliday = (holiday) => {
+    const updated = [...customHolidays, holiday];
+    setCustomHolidays(updated);
+    localStorage.setItem('shift_custom_holidays', JSON.stringify(updated));
+    addLog(`Hari libur manual ditambahkan: ${holiday.localName} (${holiday.date})`);
+  };
+
+  const deleteCustomHoliday = (date) => {
+    const updated = customHolidays.filter(h => h.date !== date);
+    setCustomHolidays(updated);
+    localStorage.setItem('shift_custom_holidays', JSON.stringify(updated));
+    addLog(`Hari libur manual dihapus: ${date}`);
+  };
+
+  // Shift update with undo support
+  const updateShift = (dateStr, empId, newShiftId) => {
+    const updatedShifts = { ...shifts };
+    if (!updatedShifts[dateStr]) updatedShifts[dateStr] = {};
+    if (newShiftId) updatedShifts[dateStr][empId] = newShiftId;
+    else delete updatedShifts[dateStr][empId];
+
+    setShifts(updatedShifts);
+    localStorage.setItem('shift_data', JSON.stringify(updatedShifts));
+    if (undoRef.current) {
+      const state = undoRef.current.pushState(updatedShifts);
+      setCanUndo(state.canUndo); setCanRedo(state.canRedo);
+    }
+    const emp = employees.find(e => e.id === empId);
+    if (emp) {
+      const shiftName = newShiftId ? `shift ${newShiftId}` : 'dihapus';
+      addLog(`Jadwal ${emp.name} pada ${dateStr} diubah menjadi ${shiftName}`);
+      if (notificationsEnabled) notifyScheduleChange(emp.name, dateStr, shiftName);
+    }
+  };
+
+  // Notes
+  const updateNote = (dateStr, empId, note) => {
+    const key = `${dateStr}_${empId}`;
+    const updated = { ...notes };
+    if (note) updated[key] = note; else delete updated[key];
+    setNotes(updated);
+    localStorage.setItem('shift_notes', JSON.stringify(updated));
+  };
+
+  // Undo/Redo
+  const handleUndo = () => {
+    if (!undoRef.current) return;
+    const state = undoRef.current.undo();
+    setShifts(state.current); setCanUndo(state.canUndo); setCanRedo(state.canRedo);
+    localStorage.setItem('shift_data', JSON.stringify(state.current));
+    addLog('Undo: Jadwal dikembalikan ke versi sebelumnya');
+  };
+  const handleRedo = () => {
+    if (!undoRef.current) return;
+    const state = undoRef.current.redo();
+    setShifts(state.current); setCanUndo(state.canUndo); setCanRedo(state.canRedo);
+    localStorage.setItem('shift_data', JSON.stringify(state.current));
+    addLog('Redo: Jadwal dikembalikan ke versi berikutnya');
+  };
+
+  // Employee CRUD
+  const addEmployee = (emp) => {
+    const newEmp = { ...emp, id: Date.now().toString(), avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${emp.name}`, phone: emp.phone || '', email: emp.email || '', joinDate: emp.joinDate || '', department: emp.department || 'Umum', constraints: emp.constraints || {}, preferences: emp.preferences || {} };
+    const updated = [...employees, newEmp];
+    setEmployees(updated); localStorage.setItem('shift_employees', JSON.stringify(updated));
+    addLog(`Karyawan baru ditambahkan: ${emp.name}`);
+  };
+  const editEmployee = (emp) => {
+    const updated = employees.map(e => e.id === emp.id ? { ...e, ...emp } : e);
+    setEmployees(updated); localStorage.setItem('shift_employees', JSON.stringify(updated));
+    addLog(`Data karyawan diubah: ${emp.name}`);
+  };
+  const deleteEmployee = (id) => {
+    const emp = employees.find(e => e.id === id);
+    const updated = employees.filter(e => e.id !== id);
+    setEmployees(updated); localStorage.setItem('shift_employees', JSON.stringify(updated));
+    if (emp) addLog(`Karyawan dihapus: ${emp.name}`);
+  };
+
+  // Batch shifts with undo
+  const setBatchShifts = (newShifts) => {
+    setShifts(newShifts); localStorage.setItem('shift_data', JSON.stringify(newShifts));
+    if (undoRef.current) {
+      const state = undoRef.current.pushState(newShifts);
+      setCanUndo(state.canUndo); setCanRedo(state.canRedo);
+    }
+    addLog(`Jadwal di-generate ulang secara otomatis`);
+  };
+
+  // Leave management
+  const addLeave = (leave) => {
+    const updated = [...leaves, leave];
+    setLeaves(updated); localStorage.setItem('shift_leaves', JSON.stringify(updated));
+    addLog(`Pengajuan cuti: ${leave.empName} (${leave.type})`);
+  };
+  const updateLeave = (leave) => {
+    const updated = leaves.map(l => l.id === leave.id ? leave : l);
+    setLeaves(updated); localStorage.setItem('shift_leaves', JSON.stringify(updated));
+    addLog(`Status cuti ${leave.empName}: ${leave.status}`);
+  };
+
+  // Swap requests
+  const addSwapRequest = (req) => {
+    const updated = [...swapRequests, req];
+    setSwapRequests(updated); localStorage.setItem('shift_swaps', JSON.stringify(updated));
+    addLog(`Permintaan tukar shift: ${req.fromName} ↔ ${req.toName}`);
+  };
+  const resolveSwap = (id, status) => {
+    const updated = swapRequests.map(r => r.id === id ? { ...r, status } : r);
+    setSwapRequests(updated); localStorage.setItem('shift_swaps', JSON.stringify(updated));
+    if (status === 'approved') {
+      const req = swapRequests.find(r => r.id === id);
+      if (req) {
+        const newShifts = { ...shifts };
+        if (newShifts[req.dateStr]) {
+          newShifts[req.dateStr][req.fromEmpId] = req.toShift;
+          newShifts[req.dateStr][req.toEmpId] = req.fromShift;
+          setBatchShifts(newShifts);
+        }
+        addLog(`Tukar shift disetujui: ${req.fromName} ↔ ${req.toName} pada ${req.dateStr}`);
+      }
+    }
+  };
+
+  // Theme & departments
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+  const updateDepartments = (deps) => { setDepartments(deps); localStorage.setItem('shift_departments', JSON.stringify(deps)); };
+  const toggleNotifications = async () => {
+    if (!notificationsEnabled) {
+      const result = await requestNotificationPermission();
+      if (result === 'granted') { setNotificationsEnabled(true); localStorage.setItem('shift_notif', 'true'); }
+    } else { setNotificationsEnabled(false); localStorage.setItem('shift_notif', 'false'); }
+  };
+
+  const isViewer = sessionStorage.getItem('shift_role') === 'viewer';
+
+  return (
+    <LoginGate>
+      <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} theme={theme} toggleTheme={toggleTheme} />
+        <main style={{ flex: 1, marginLeft: '17.5rem', overflowY: 'auto', position: 'relative', padding: '1.25rem' }}>
+          <div className="orb orb-1" /><div className="orb orb-2" /><div className="orb orb-3" />
+          <div key={activeTab} className="animate-fade-in-up" style={{ position: 'relative', zIndex: 1, height: '100%' }}>
+            {activeTab === 'dashboard' && <Dashboard employees={employees} shifts={shifts} activityLogs={activityLogs} leaves={leaves} swapRequests={swapRequests} />}
+            {activeTab === 'employees' && <EmployeeList employees={employees} onAdd={addEmployee} onEdit={editEmployee} onDelete={deleteEmployee} shifts={shifts} departments={departments} isViewer={isViewer} />}
+            {activeTab === 'calendar' && <CalendarView employees={employees} shifts={shifts} updateShift={updateShift} setBatchShifts={setBatchShifts} autoHolidayEnabled={autoHolidayEnabled} holidays={allHolidays} canUndo={canUndo} canRedo={canRedo} onUndo={handleUndo} onRedo={handleRedo} notes={notes} updateNote={updateNote} swapRequests={swapRequests} onAddSwapRequest={addSwapRequest} onResolveSwap={resolveSwap} isViewer={isViewer} />}
+            {activeTab === 'reports' && <Reports employees={employees} shifts={shifts} cutOffDate={cutOffDate} incentiveAmount={incentiveAmount} holidayIncentiveAmount={holidayIncentiveAmount} spIncentiveAmount={spIncentiveAmount} holidays={allHolidays} />}
+            {activeTab === 'analytics' && <AnalyticsView employees={employees} shifts={shifts} incentiveAmount={incentiveAmount} holidayIncentiveAmount={holidayIncentiveAmount} spIncentiveAmount={spIncentiveAmount} holidays={allHolidays} />}
+            {activeTab === 'leave' && <LeaveManagement employees={employees} leaves={leaves} onAddLeave={addLeave} onUpdateLeave={updateLeave} shifts={shifts} setBatchShifts={setBatchShifts} />}
+            {activeTab === 'audit' && <AuditLog logs={activityLogs} />}
+            {activeTab === 'settings' && <SettingsView autoHolidayEnabled={autoHolidayEnabled} toggleAutoHoliday={toggleAutoHoliday} cutOffDate={cutOffDate} incentiveAmount={incentiveAmount} holidayIncentiveAmount={holidayIncentiveAmount} spIncentiveAmount={spIncentiveAmount} updateSettings={updateSettings} customHolidays={customHolidays} apiHolidays={holidays} onAddHoliday={addCustomHoliday} onDeleteHoliday={deleteCustomHoliday} theme={theme} toggleTheme={toggleTheme} departments={departments} updateDepartments={updateDepartments} notificationsEnabled={notificationsEnabled} toggleNotifications={toggleNotifications} shifts={shifts} />}
+          </div>
+        </main>
+      </div>
+    </LoginGate>
+  );
+}
+
+export default App;

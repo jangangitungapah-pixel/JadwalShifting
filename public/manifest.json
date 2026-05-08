@@ -1,0 +1,14 @@
+{
+  "name": "ShiftSync — Jadwal Shift Modern",
+  "short_name": "ShiftSync",
+  "description": "Aplikasi penjadwalan shift karyawan modern dan profesional.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B0F1A",
+  "theme_color": "#6366F1",
+  "orientation": "any",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "categories": ["business", "productivity"]
+}
