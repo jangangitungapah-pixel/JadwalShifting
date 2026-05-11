@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Calendar, Users, LayoutDashboard, Settings, LogOut, FileText, Sparkles, BarChart3, CalendarOff, Sun, Moon, Globe, ClipboardList, Keyboard } from 'lucide-react';
+import { Calendar, Users, LayoutDashboard, Settings, FileText, Sparkles, BarChart3, CalendarOff, Sun, Moon, Globe, ClipboardList, Loader, Database } from 'lucide-react';
 import { useTranslation } from '../utils/i18n.jsx';
 
-const Sidebar = ({ activeTab, setActiveTab, theme, toggleTheme }) => {
+const Sidebar = ({ activeTab, setActiveTab, theme, toggleTheme, syncStatus, forceSync }) => {
   const [hoveredItem, setHoveredItem] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
   const { lang, setLanguage } = useTranslation();
 
   const menuItems = [
@@ -63,6 +64,16 @@ const Sidebar = ({ activeTab, setActiveTab, theme, toggleTheme }) => {
             <h1 style={{ fontSize: '1.15rem', fontWeight: '800', letterSpacing: '-0.03em', background: 'linear-gradient(135deg, var(--text-primary), var(--color-primary))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', lineHeight: 1.2 }}>ShiftSync</h1>
             <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: '500', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Scheduling Pro</p>
           </div>
+          {/* Local Sync Status */}
+          <button 
+            title={syncStatus === 'synced' ? 'Local DB: Tersinkron (Klik untuk paksa sinkronisasi)' : syncStatus === 'syncing' ? 'Local DB: Sinkronisasi...' : 'Local DB: Offline (Klik untuk coba lagi)'} 
+            onClick={async () => { if (forceSync) { setIsSyncing(true); await forceSync(); setIsSyncing(false); } }}
+            disabled={isSyncing || syncStatus === 'syncing'}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.3rem 0.55rem', borderRadius: 'var(--radius-full)', background: syncStatus === 'synced' ? 'rgba(52,211,153,0.1)' : syncStatus === 'syncing' ? 'rgba(251,191,36,0.1)' : 'rgba(248,113,113,0.1)', border: `1px solid ${syncStatus === 'synced' ? 'rgba(52,211,153,0.25)' : syncStatus === 'syncing' ? 'rgba(251,191,36,0.25)' : 'rgba(248,113,113,0.25)'}`, marginTop: '0.25rem', cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            {syncStatus === 'synced' && !isSyncing ? <Database size={12} style={{ color: '#34D399' }} /> : (syncStatus === 'syncing' || isSyncing) ? <Loader size={12} style={{ color: '#FBBF24', animation: 'spin 1s linear infinite' }} /> : <Database size={12} style={{ color: '#F87171' }} />}
+            <span style={{ fontSize: '0.58rem', fontWeight: '600', color: syncStatus === 'synced' && !isSyncing ? '#34D399' : (syncStatus === 'syncing' || isSyncing) ? '#FBBF24' : '#F87171', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{syncStatus === 'synced' && !isSyncing ? 'Synced' : (syncStatus === 'syncing' || isSyncing) ? 'Syncing' : 'Offline'}</span>
+          </button>
         </div>
 
         {/* Main Nav */}

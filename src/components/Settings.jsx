@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Zap, Calendar, DollarSign, Save, Check, Database, Upload, Download, Trash2, Sun, Moon, Globe, Bell, Lock, Shield, Clock, Plus, X, RotateCcw, Keyboard, Building2, History } from 'lucide-react';
+import { Settings as SettingsIcon, Zap, Calendar, DollarSign, Save, Check, Database, Upload, Download, Trash2, Sun, Moon, Globe, Bell, Lock, Shield, Clock, Plus, X, RotateCcw, Keyboard, Building2, History, Cloud, CloudOff, RefreshCw } from 'lucide-react';
 import { getVersions, restoreVersion, deleteVersion, saveVersion } from '../utils/versionHistory';
 import { keyboardShortcuts } from '../utils/dummyData';
 
-const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incentiveAmount, holidayIncentiveAmount, spIncentiveAmount, updateSettings, customHolidays, apiHolidays, onAddHoliday, onDeleteHoliday, theme, toggleTheme, departments, updateDepartments, notificationsEnabled, toggleNotifications, shifts }) => {
+const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incentiveAmount, holidayIncentiveAmount, spIncentiveAmount, updateSettings, customHolidays, apiHolidays, onAddHoliday, onDeleteHoliday, theme, toggleTheme, departments, updateDepartments, notificationsEnabled, toggleNotifications, shifts, syncStatus, forceSync }) => {
   const [localCutOff, setLocalCutOff] = useState(cutOffDate);
   const [localIncentive, setLocalIncentive] = useState(incentiveAmount);
   const [localHolidayIncentive, setLocalHolidayIncentive] = useState(holidayIncentiveAmount);
@@ -17,6 +17,7 @@ const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incen
   const [loginEnabled, setLoginEnabled] = useState(() => localStorage.getItem('shift_login_enabled') === 'true');
   const [loginPin, setLoginPin] = useState(() => localStorage.getItem('shift_login_pin') || '');
   const [autoBackup, setAutoBackup] = useState(() => localStorage.getItem('shift_auto_backup') !== 'false');
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => { if (showVersions) setVersions(getVersions()); }, [showVersions]);
 
@@ -246,6 +247,27 @@ const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incen
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Local Sync — full width */}
+      <div className="glass-card animate-fade-in-up delay-300" style={{ ...sectionStyle, border: `1px solid ${syncStatus === 'synced' ? 'rgba(52,211,153,0.2)' : syncStatus === 'syncing' ? 'rgba(251,191,36,0.2)' : 'rgba(248,113,113,0.2)'}` }}>
+        {sectionTitle(<Database size={18} style={{ color: '#60A5FA' }} />, 'Local Database Sync (SQLite)', '#60A5FA')}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            {syncStatus === 'synced' ? <Check size={16} style={{ color: '#34D399' }} /> : syncStatus === 'syncing' ? <RefreshCw size={16} style={{ color: '#FBBF24', animation: 'spin 1s linear infinite' }} /> : <X size={16} style={{ color: '#F87171' }} />}
+            <span style={{ fontSize: '0.85rem', fontWeight: '600', color: syncStatus === 'synced' ? '#34D399' : syncStatus === 'syncing' ? '#FBBF24' : '#F87171' }}>
+              {syncStatus === 'synced' ? 'Tersinkron' : syncStatus === 'syncing' ? 'Sinkronisasi...' : 'Offline / Server Mati'}
+            </span>
+          </div>
+        </div>
+        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+          Data disimpan di Local SQLite Server. Perubahan otomatis tersinkron dan bisa diakses dari browser/device lain di jaringan yang sama selama server menyala.
+        </p>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button onClick={async () => { if (forceSync) { setIsSyncing(true); await forceSync(); setIsSyncing(false); } }} disabled={isSyncing} className="btn btn-primary" style={{ flex: 1 }}>
+            <RefreshCw size={15} style={isSyncing ? { animation: 'spin 1s linear infinite' } : {}} /> {isSyncing ? 'Sinkronisasi...' : 'Force Sync ke Local DB'}
+          </button>
         </div>
       </div>
 

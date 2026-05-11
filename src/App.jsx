@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { syncToApi, subscribeToAllApi, syncAllToApi, loadAllFromApi } from './utils/apiSync';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import EmployeeList from './components/EmployeeList';
@@ -26,6 +27,8 @@ function App() {
   const [swapRequests, setSwapRequests] = useState(() => { try { return JSON.parse(localStorage.getItem('shift_swaps') || '[]'); } catch { return []; } });
   const [departments, setDepartments] = useState(() => { try { return JSON.parse(localStorage.getItem('shift_departments') || '["Umum"]'); } catch { return ['Umum']; } });
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => localStorage.getItem('shift_notif') === 'true');
+  const [syncStatus, setSyncStatus] = useState('offline'); // 'synced' | 'syncing' | 'offline'
+  const firebaseListenerRef = useRef(false); // prevent re-entrant updates
 
   const [autoHolidayEnabled, setAutoHolidayEnabled] = useState(() => {
     const saved = localStorage.getItem('shift_auto_holiday');
@@ -102,7 +105,55 @@ function App() {
     // Request notifications
     if (localStorage.getItem('shift_notif') === 'true') requestNotificationPermission();
 
-    return () => stopAutoBackup();
+    // Local SQLite Sync via API
+    setSyncStatus('syncing');
+    loadAllFromApi().then(cloud => {
+      if (cloud) {
+        firebaseListenerRef.current = true;
+        if (cloud.employees) { setEmployees(cloud.employees); localStorage.setItem('shift_employees', JSON.stringify(cloud.employees)); }
+        if (cloud.shifts) { setShifts(cloud.shifts); localStorage.setItem('shift_data', JSON.stringify(cloud.shifts)); if (undoRef.current) undoRef.current = createUndoManager(cloud.shifts); }
+        if (cloud.logs) { setActivityLogs(cloud.logs); localStorage.setItem('shift_logs', JSON.stringify(cloud.logs)); }
+        if (cloud.notes) { setNotes(cloud.notes); localStorage.setItem('shift_notes', JSON.stringify(cloud.notes)); }
+        if (cloud.leaves) { setLeaves(cloud.leaves); localStorage.setItem('shift_leaves', JSON.stringify(cloud.leaves)); }
+        if (cloud.swaps) { setSwapRequests(cloud.swaps); localStorage.setItem('shift_swaps', JSON.stringify(cloud.swaps)); }
+        if (cloud.departments) { setDepartments(cloud.departments); localStorage.setItem('shift_departments', JSON.stringify(cloud.departments)); }
+        if (cloud.customHolidays) { setCustomHolidays(cloud.customHolidays); localStorage.setItem('shift_custom_holidays', JSON.stringify(cloud.customHolidays)); }
+        if (cloud.settings) {
+          if (cloud.settings.cutOffDate != null) { setCutOffDate(cloud.settings.cutOffDate); localStorage.setItem('shift_cutoff_date', cloud.settings.cutOffDate); }
+          if (cloud.settings.incentiveAmount != null) { setIncentiveAmount(cloud.settings.incentiveAmount); localStorage.setItem('shift_incentive_amount', cloud.settings.incentiveAmount); }
+          if (cloud.settings.holidayIncentiveAmount != null) { setHolidayIncentiveAmount(cloud.settings.holidayIncentiveAmount); localStorage.setItem('shift_holiday_incentive_amount', cloud.settings.holidayIncentiveAmount); }
+          if (cloud.settings.spIncentiveAmount != null) { setSpIncentiveAmount(cloud.settings.spIncentiveAmount); localStorage.setItem('shift_sp_incentive_amount', cloud.settings.spIncentiveAmount); }
+          if (cloud.settings.autoHolidayEnabled != null) { setAutoHolidayEnabled(cloud.settings.autoHolidayEnabled); localStorage.setItem('shift_auto_holiday', JSON.stringify(cloud.settings.autoHolidayEnabled)); }
+        }
+        setTimeout(() => { firebaseListenerRef.current = false; }, 500);
+      }
+      setSyncStatus('synced');
+    }).catch(() => setSyncStatus('offline'));
+
+    // Polling listener for multi-browser sync
+    const unsub = subscribeToAllApi((cloud) => {
+        if (!cloud || firebaseListenerRef.current) return;
+        firebaseListenerRef.current = true;
+        if (cloud.employees) { setEmployees(cloud.employees); localStorage.setItem('shift_employees', JSON.stringify(cloud.employees)); }
+        if (cloud.shifts) { setShifts(cloud.shifts); localStorage.setItem('shift_data', JSON.stringify(cloud.shifts)); }
+        if (cloud.logs) { setActivityLogs(cloud.logs); localStorage.setItem('shift_logs', JSON.stringify(cloud.logs)); }
+        if (cloud.notes) { setNotes(cloud.notes); localStorage.setItem('shift_notes', JSON.stringify(cloud.notes)); }
+        if (cloud.leaves) { setLeaves(cloud.leaves); localStorage.setItem('shift_leaves', JSON.stringify(cloud.leaves)); }
+        if (cloud.swaps) { setSwapRequests(cloud.swaps); localStorage.setItem('shift_swaps', JSON.stringify(cloud.swaps)); }
+        if (cloud.departments) { setDepartments(cloud.departments); localStorage.setItem('shift_departments', JSON.stringify(cloud.departments)); }
+        if (cloud.customHolidays) { setCustomHolidays(cloud.customHolidays); localStorage.setItem('shift_custom_holidays', JSON.stringify(cloud.customHolidays)); }
+        if (cloud.settings) {
+          if (cloud.settings.cutOffDate != null) setCutOffDate(cloud.settings.cutOffDate);
+          if (cloud.settings.incentiveAmount != null) setIncentiveAmount(cloud.settings.incentiveAmount);
+          if (cloud.settings.holidayIncentiveAmount != null) setHolidayIncentiveAmount(cloud.settings.holidayIncentiveAmount);
+          if (cloud.settings.spIncentiveAmount != null) setSpIncentiveAmount(cloud.settings.spIncentiveAmount);
+          if (cloud.settings.autoHolidayEnabled != null) setAutoHolidayEnabled(cloud.settings.autoHolidayEnabled);
+        }
+        setSyncStatus('synced');
+        setTimeout(() => { firebaseListenerRef.current = false; }, 500);
+      });
+
+    return () => { stopAutoBackup(); unsub(); };
   }, []);
 
   // Keyboard shortcuts
@@ -120,17 +171,41 @@ function App() {
     ...customHolidays.map(h => ({ date: h.date, localName: h.localName, name: h.localName, isCustom: true }))
   ];
 
+  // Sync helper — syncs a specific path
+  const apiSyncPath = (path, data) => {
+    firebaseListenerRef.current = true;
+    syncToApi(path, data).finally(() => {
+      setTimeout(() => { firebaseListenerRef.current = false; }, 300);
+    });
+  };
+
+  // Force sync all data to API
+  const forceSync = async () => {
+    setSyncStatus('syncing');
+    firebaseListenerRef.current = true;
+    const allData = {
+      employees, shifts, logs: activityLogs, notes, leaves, swaps: swapRequests,
+      departments, customHolidays,
+      settings: { cutOffDate, incentiveAmount, holidayIncentiveAmount, spIncentiveAmount, autoHolidayEnabled }
+    };
+    const ok = await syncAllToApi(allData);
+    setSyncStatus(ok ? 'synced' : 'offline');
+    setTimeout(() => { firebaseListenerRef.current = false; }, 500);
+  };
+
   const addLog = (message) => {
     const newLog = { id: Date.now().toString(), message, timestamp: new Date().toISOString() };
     const updatedLogs = [newLog, ...activityLogs].slice(0, 100);
     setActivityLogs(updatedLogs);
     localStorage.setItem('shift_logs', JSON.stringify(updatedLogs));
+    apiSyncPath('logs', updatedLogs);
   };
 
   const toggleAutoHoliday = () => {
     const newVal = !autoHolidayEnabled;
     setAutoHolidayEnabled(newVal);
     localStorage.setItem('shift_auto_holiday', JSON.stringify(newVal));
+    apiSyncPath('settings/autoHolidayEnabled', newVal);
     addLog(`Fitur Auto-Libur Nasional ${newVal ? 'diaktifkan' : 'dinonaktifkan'}`);
   };
 
@@ -141,6 +216,7 @@ function App() {
     localStorage.setItem('shift_incentive_amount', newIncentive);
     localStorage.setItem('shift_holiday_incentive_amount', newHolidayIncentive);
     localStorage.setItem('shift_sp_incentive_amount', newSpIncentive);
+    apiSyncPath('settings', { cutOffDate: newCutOff, incentiveAmount: newIncentive, holidayIncentiveAmount: newHolidayIncentive, spIncentiveAmount: newSpIncentive, autoHolidayEnabled });
     addLog(`Pengaturan insentif & cut-off diperbarui`);
   };
 
@@ -148,6 +224,7 @@ function App() {
     const updated = [...customHolidays, holiday];
     setCustomHolidays(updated);
     localStorage.setItem('shift_custom_holidays', JSON.stringify(updated));
+    apiSyncPath('customHolidays', updated);
     addLog(`Hari libur manual ditambahkan: ${holiday.localName} (${holiday.date})`);
   };
 
@@ -155,6 +232,7 @@ function App() {
     const updated = customHolidays.filter(h => h.date !== date);
     setCustomHolidays(updated);
     localStorage.setItem('shift_custom_holidays', JSON.stringify(updated));
+    apiSyncPath('customHolidays', updated);
     addLog(`Hari libur manual dihapus: ${date}`);
   };
 
@@ -167,6 +245,7 @@ function App() {
 
     setShifts(updatedShifts);
     localStorage.setItem('shift_data', JSON.stringify(updatedShifts));
+    apiSyncPath('shifts', updatedShifts);
     if (undoRef.current) {
       const state = undoRef.current.pushState(updatedShifts);
       setCanUndo(state.canUndo); setCanRedo(state.canRedo);
@@ -186,6 +265,7 @@ function App() {
     if (note) updated[key] = note; else delete updated[key];
     setNotes(updated);
     localStorage.setItem('shift_notes', JSON.stringify(updated));
+    apiSyncPath('notes', updated);
   };
 
   // Undo/Redo
@@ -194,6 +274,7 @@ function App() {
     const state = undoRef.current.undo();
     setShifts(state.current); setCanUndo(state.canUndo); setCanRedo(state.canRedo);
     localStorage.setItem('shift_data', JSON.stringify(state.current));
+    apiSyncPath('shifts', state.current);
     addLog('Undo: Jadwal dikembalikan ke versi sebelumnya');
   };
   const handleRedo = () => {
@@ -201,6 +282,7 @@ function App() {
     const state = undoRef.current.redo();
     setShifts(state.current); setCanUndo(state.canUndo); setCanRedo(state.canRedo);
     localStorage.setItem('shift_data', JSON.stringify(state.current));
+    apiSyncPath('shifts', state.current);
     addLog('Redo: Jadwal dikembalikan ke versi berikutnya');
   };
 
@@ -209,23 +291,27 @@ function App() {
     const newEmp = { ...emp, id: Date.now().toString(), avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${emp.name}`, phone: emp.phone || '', email: emp.email || '', joinDate: emp.joinDate || '', department: emp.department || 'Umum', constraints: emp.constraints || {}, preferences: emp.preferences || {} };
     const updated = [...employees, newEmp];
     setEmployees(updated); localStorage.setItem('shift_employees', JSON.stringify(updated));
+    apiSyncPath('employees', updated);
     addLog(`Karyawan baru ditambahkan: ${emp.name}`);
   };
   const editEmployee = (emp) => {
     const updated = employees.map(e => e.id === emp.id ? { ...e, ...emp } : e);
     setEmployees(updated); localStorage.setItem('shift_employees', JSON.stringify(updated));
+    apiSyncPath('employees', updated);
     addLog(`Data karyawan diubah: ${emp.name}`);
   };
   const deleteEmployee = (id) => {
     const emp = employees.find(e => e.id === id);
     const updated = employees.filter(e => e.id !== id);
     setEmployees(updated); localStorage.setItem('shift_employees', JSON.stringify(updated));
+    apiSyncPath('employees', updated);
     if (emp) addLog(`Karyawan dihapus: ${emp.name}`);
   };
 
   // Batch shifts with undo
   const setBatchShifts = (newShifts) => {
     setShifts(newShifts); localStorage.setItem('shift_data', JSON.stringify(newShifts));
+    apiSyncPath('shifts', newShifts);
     if (undoRef.current) {
       const state = undoRef.current.pushState(newShifts);
       setCanUndo(state.canUndo); setCanRedo(state.canRedo);
@@ -237,11 +323,13 @@ function App() {
   const addLeave = (leave) => {
     const updated = [...leaves, leave];
     setLeaves(updated); localStorage.setItem('shift_leaves', JSON.stringify(updated));
+    apiSyncPath('leaves', updated);
     addLog(`Pengajuan cuti: ${leave.empName} (${leave.type})`);
   };
   const updateLeave = (leave) => {
     const updated = leaves.map(l => l.id === leave.id ? leave : l);
     setLeaves(updated); localStorage.setItem('shift_leaves', JSON.stringify(updated));
+    apiSyncPath('leaves', updated);
     addLog(`Status cuti ${leave.empName}: ${leave.status}`);
   };
 
@@ -249,11 +337,13 @@ function App() {
   const addSwapRequest = (req) => {
     const updated = [...swapRequests, req];
     setSwapRequests(updated); localStorage.setItem('shift_swaps', JSON.stringify(updated));
+    apiSyncPath('swaps', updated);
     addLog(`Permintaan tukar shift: ${req.fromName} ↔ ${req.toName}`);
   };
   const resolveSwap = (id, status) => {
     const updated = swapRequests.map(r => r.id === id ? { ...r, status } : r);
     setSwapRequests(updated); localStorage.setItem('shift_swaps', JSON.stringify(updated));
+    apiSyncPath('swaps', updated);
     if (status === 'approved') {
       const req = swapRequests.find(r => r.id === id);
       if (req) {
@@ -270,7 +360,7 @@ function App() {
 
   // Theme & departments
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
-  const updateDepartments = (deps) => { setDepartments(deps); localStorage.setItem('shift_departments', JSON.stringify(deps)); };
+  const updateDepartments = (deps) => { setDepartments(deps); localStorage.setItem('shift_departments', JSON.stringify(deps)); apiSyncPath('departments', deps); };
   const toggleNotifications = async () => {
     if (!notificationsEnabled) {
       const result = await requestNotificationPermission();
@@ -283,7 +373,7 @@ function App() {
   return (
     <LoginGate>
       <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} theme={theme} toggleTheme={toggleTheme} />
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} theme={theme} toggleTheme={toggleTheme} syncStatus={syncStatus} forceSync={forceSync} />
         <main style={{ flex: 1, marginLeft: '17.5rem', overflowY: 'auto', position: 'relative', padding: '1.25rem' }}>
           <div className="orb orb-1" /><div className="orb orb-2" /><div className="orb orb-3" />
           <div key={activeTab} className="animate-fade-in-up" style={{ position: 'relative', zIndex: 1, height: '100%' }}>
@@ -294,7 +384,7 @@ function App() {
             {activeTab === 'analytics' && <AnalyticsView employees={employees} shifts={shifts} incentiveAmount={incentiveAmount} holidayIncentiveAmount={holidayIncentiveAmount} spIncentiveAmount={spIncentiveAmount} holidays={allHolidays} />}
             {activeTab === 'leave' && <LeaveManagement employees={employees} leaves={leaves} onAddLeave={addLeave} onUpdateLeave={updateLeave} shifts={shifts} setBatchShifts={setBatchShifts} />}
             {activeTab === 'audit' && <AuditLog logs={activityLogs} />}
-            {activeTab === 'settings' && <SettingsView autoHolidayEnabled={autoHolidayEnabled} toggleAutoHoliday={toggleAutoHoliday} cutOffDate={cutOffDate} incentiveAmount={incentiveAmount} holidayIncentiveAmount={holidayIncentiveAmount} spIncentiveAmount={spIncentiveAmount} updateSettings={updateSettings} customHolidays={customHolidays} apiHolidays={holidays} onAddHoliday={addCustomHoliday} onDeleteHoliday={deleteCustomHoliday} theme={theme} toggleTheme={toggleTheme} departments={departments} updateDepartments={updateDepartments} notificationsEnabled={notificationsEnabled} toggleNotifications={toggleNotifications} shifts={shifts} />}
+            {activeTab === 'settings' && <SettingsView autoHolidayEnabled={autoHolidayEnabled} toggleAutoHoliday={toggleAutoHoliday} cutOffDate={cutOffDate} incentiveAmount={incentiveAmount} holidayIncentiveAmount={holidayIncentiveAmount} spIncentiveAmount={spIncentiveAmount} updateSettings={updateSettings} customHolidays={customHolidays} apiHolidays={holidays} onAddHoliday={addCustomHoliday} onDeleteHoliday={deleteCustomHoliday} theme={theme} toggleTheme={toggleTheme} departments={departments} updateDepartments={updateDepartments} notificationsEnabled={notificationsEnabled} toggleNotifications={toggleNotifications} shifts={shifts} syncStatus={syncStatus} forceSync={forceSync} />}
           </div>
         </main>
       </div>
