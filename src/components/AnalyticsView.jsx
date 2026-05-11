@@ -5,26 +5,43 @@ import { calculateFairnessScore, calculateWorkloadBalance, calculateOvertime } f
 
 const COLORS = ['#60A5FA', '#FBBF24', '#A78BFA', '#F87171', '#2DD4BF', '#F472B6', '#34D399', '#818CF8'];
 
-const AnalyticsView = ({ employees, shifts, incentiveAmount, holidayIncentiveAmount, spIncentiveAmount, holidays }) => {
+const AnalyticsView = ({ employees, shifts, cutOffDate, incentiveAmount, holidayIncentiveAmount, spIncentiveAmount, holidays }) => {
   const today = new Date();
   const [selectedYear, setSelectedYear] = useState(today.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 
+  const getDateRange = (year, month, cutOff) => {
+    let start, end;
+    if (!cutOff || cutOff >= 28) {
+      start = new Date(year, month, 1);
+      end = new Date(year, month + 1, 0);
+    } else {
+      start = new Date(year, month - 1, cutOff + 1);
+      end = new Date(year, month, cutOff);
+    }
+    const dates = [];
+    let current = new Date(start);
+    while (current <= end) {
+      dates.push(new Date(current));
+      current.setDate(current.getDate() + 1);
+    }
+    return dates;
+  };
+
   // Shift distribution pie chart
   const shiftDistribution = useMemo(() => {
-    const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
-    const ms = String(selectedMonth + 1).padStart(2, '0');
+    const dates = getDateRange(selectedYear, selectedMonth, cutOffDate);
     let pagi = 0, sore = 0, malam = 0, libur = 0, sp = 0;
-    for (let i = 1; i <= daysInMonth; i++) {
-      const ds = `${selectedYear}-${ms}-${String(i).padStart(2, '0')}`;
+    for (const d of dates) {
+      const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       Object.values(shifts[ds] || {}).forEach(s => {
         if (s === 'pagi') pagi++; else if (s === 'sore') sore++; else if (s === 'malam') malam++;
         else if (s === 'libur') libur++; else if (s?.includes('sp')) sp++;
       });
     }
     return [{ name: 'Pagi', value: pagi }, { name: 'Sore', value: sore }, { name: 'Malam', value: malam }, { name: 'Libur', value: libur }, { name: 'SP', value: sp }].filter(x => x.value > 0);
-  }, [shifts, selectedYear, selectedMonth]);
+  }, [shifts, selectedYear, selectedMonth, cutOffDate]);
 
   // Monthly trend (last 6 months)
   const monthlyTrend = useMemo(() => {
@@ -32,22 +49,22 @@ const AnalyticsView = ({ employees, shifts, incentiveAmount, holidayIncentiveAmo
     for (let m = 5; m >= 0; m--) {
       let d = new Date(selectedYear, selectedMonth - m, 1);
       const y = d.getFullYear(), mo = d.getMonth();
-      const dim = new Date(y, mo + 1, 0).getDate();
-      const ms = String(mo + 1).padStart(2, '0');
+      const dates = getDateRange(y, mo, cutOffDate);
+      
       let p = 0, s = 0, ml = 0;
-      for (let i = 1; i <= dim; i++) {
-        const ds = `${y}-${ms}-${String(i).padStart(2, '0')}`;
+      for (const dateObj of dates) {
+        const ds = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
         Object.values(shifts[ds] || {}).forEach(sh => { if (sh === 'pagi') p++; else if (sh === 'sore') s++; else if (sh === 'malam') ml++; });
       }
       data.push({ month: monthNames[mo], pagi: p, sore: s, malam: ml });
     }
     return data;
-  }, [shifts, selectedYear, selectedMonth]);
+  }, [shifts, selectedYear, selectedMonth, cutOffDate]);
 
   // Fairness & workload
-  const fairness = useMemo(() => calculateFairnessScore(employees, shifts, selectedYear, selectedMonth), [employees, shifts, selectedYear, selectedMonth]);
-  const workload = useMemo(() => calculateWorkloadBalance(employees, shifts, selectedYear, selectedMonth), [employees, shifts, selectedYear, selectedMonth]);
-  const overtime = useMemo(() => calculateOvertime(employees, shifts, selectedYear, selectedMonth), [employees, shifts, selectedYear, selectedMonth]);
+  const fairness = useMemo(() => calculateFairnessScore(employees, shifts, selectedYear, selectedMonth, cutOffDate), [employees, shifts, selectedYear, selectedMonth, cutOffDate]);
+  const workload = useMemo(() => calculateWorkloadBalance(employees, shifts, selectedYear, selectedMonth, cutOffDate), [employees, shifts, selectedYear, selectedMonth, cutOffDate]);
+  const overtime = useMemo(() => calculateOvertime(employees, shifts, selectedYear, selectedMonth, cutOffDate), [employees, shifts, selectedYear, selectedMonth, cutOffDate]);
 
   const workloadChart = workload.map(w => ({ name: w.name?.split(' ')[0] || '?', jam: w.totalHours, rata: Math.round(w.avgHours) }));
   const fairnessRadar = fairness.stats.map(s => ({ name: s.name?.split(' ')[0] || '?', skor: s.fairnessScore, pagi: s.pagi, sore: s.sore, malam: s.malam }));

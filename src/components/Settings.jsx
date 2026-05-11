@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Settings as SettingsIcon, Zap, Calendar, DollarSign, Save, Check, Database, Upload, Download, Trash2, Sun, Moon, Globe, Bell, Lock, Shield, Clock, Plus, X, RotateCcw, Keyboard, Building2, History, Cloud, CloudOff, RefreshCw } from 'lucide-react';
 import { getVersions, restoreVersion, deleteVersion, saveVersion } from '../utils/versionHistory';
 import { keyboardShortcuts } from '../utils/dummyData';
+import { sounds } from '../utils/soundService';
 
-const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incentiveAmount, holidayIncentiveAmount, spIncentiveAmount, updateSettings, customHolidays, apiHolidays, onAddHoliday, onDeleteHoliday, theme, toggleTheme, departments, updateDepartments, notificationsEnabled, toggleNotifications, shifts, syncStatus, forceSync }) => {
+const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incentiveAmount, holidayIncentiveAmount, spIncentiveAmount, updateSettings, allHolidays, onAddHoliday, onDeleteHoliday, theme, toggleTheme, departments, updateDepartments, notificationsEnabled, toggleNotifications, shifts, syncStatus, forceSync }) => {
   const [localCutOff, setLocalCutOff] = useState(cutOffDate);
   const [localIncentive, setLocalIncentive] = useState(incentiveAmount);
   const [localHolidayIncentive, setLocalHolidayIncentive] = useState(holidayIncentiveAmount);
@@ -22,12 +23,14 @@ const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incen
   useEffect(() => { if (showVersions) setVersions(getVersions()); }, [showVersions]);
 
   const handleSave = () => {
+    sounds.success();
     updateSettings(localCutOff, localIncentive, localHolidayIncentive, localSpIncentive);
     setSaved(true); setTimeout(() => setSaved(false), 2000);
   };
 
   const handleAddHoliday = () => {
     if (newHolidayDate && newHolidayName) {
+      sounds.success();
       onAddHoliday({ date: newHolidayDate, localName: newHolidayName });
       setNewHolidayDate(''); setNewHolidayName('');
     }
@@ -58,19 +61,19 @@ const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incen
     reader.readAsText(file); e.target.value = '';
   };
 
-  const handleSaveVersion = () => { saveVersion(shifts, `Manual - ${new Date().toLocaleString('id-ID')}`); setVersions(getVersions()); };
-  const handleRestoreVersion = (id) => { if (confirm('Kembalikan ke versi ini? Data saat ini akan ditimpa.')) { restoreVersion(id); window.location.reload(); } };
-  const handleDeleteVersion = (id) => { deleteVersion(id); setVersions(getVersions()); };
+  const handleSaveVersion = () => { sounds.success(); saveVersion(shifts, `Manual - ${new Date().toLocaleString('id-ID')}`); setVersions(getVersions()); };
+  const handleRestoreVersion = (id) => { sounds.error(); if (confirm('Kembalikan ke versi ini? Data saat ini akan ditimpa.')) { sounds.success(); restoreVersion(id); window.location.reload(); } };
+  const handleDeleteVersion = (id) => { sounds.success(); deleteVersion(id); setVersions(getVersions()); };
 
   const handleLoginToggle = () => {
-    if (!loginEnabled && !loginPin) { alert('Set PIN terlebih dahulu!'); return; }
+    if (!loginEnabled && !loginPin) { sounds.error(); alert('Set PIN terlebih dahulu!'); return; }
     const v = !loginEnabled; setLoginEnabled(v); localStorage.setItem('shift_login_enabled', v.toString());
   };
-  const handlePinSave = () => { localStorage.setItem('shift_login_pin', loginPin); alert('PIN disimpan!'); };
+  const handlePinSave = () => { sounds.success(); localStorage.setItem('shift_login_pin', loginPin); alert('PIN disimpan!'); };
   const handleAutoBackupToggle = () => { const v = !autoBackup; setAutoBackup(v); localStorage.setItem('shift_auto_backup', v.toString()); };
 
-  const addDept = () => { if (newDept.trim() && !departments.includes(newDept.trim())) { updateDepartments([...departments, newDept.trim()]); setNewDept(''); } };
-  const removeDept = (d) => { if (departments.length > 1) updateDepartments(departments.filter(x => x !== d)); };
+  const addDept = () => { if (newDept.trim() && !departments.includes(newDept.trim())) { sounds.success(); updateDepartments([...departments, newDept.trim()]); setNewDept(''); } };
+  const removeDept = (d) => { if (departments.length > 1) { sounds.success(); updateDepartments(departments.filter(x => x !== d)); } };
 
   const sectionStyle = { padding: '1.5rem', marginBottom: '1.25rem' };
   const sectionTitle = (icon, text, color) => (
@@ -84,7 +87,7 @@ const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incen
     <button onClick={onClick} style={{ padding: '0.5rem 1rem', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.78rem', fontWeight: '600', border: `1.5px solid ${active ? 'var(--color-primary)' : 'var(--glass-border)'}`, background: active ? 'var(--color-primary-light)' : 'transparent', color: active ? 'var(--color-primary)' : 'var(--text-tertiary)', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>{label}</button>
   );
 
-  const allHolidays = [...(apiHolidays || []).filter(h => { const d = new Date(h.date); return d.getFullYear() === new Date().getFullYear(); }), ...customHolidays.map(h => ({ ...h, isCustom: true }))].sort((a, b) => a.date.localeCompare(b.date));
+  const displayedHolidays = [...(allHolidays || [])].filter(h => { const d = new Date(h.date); return d.getFullYear() === new Date().getFullYear() || h.isCustom; }).sort((a, b) => a.date.localeCompare(b.date));
 
   return (
     <div style={{ padding: '0.5rem' }}>
@@ -211,17 +214,17 @@ const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incen
 
       {/* Holidays — full width */}
       <div className="glass-card animate-fade-in-up delay-300" style={sectionStyle}>
-        {sectionTitle(<Calendar size={18} style={{ color: '#F87171' }} />, `Hari Libur Nasional (${allHolidays.length})`, '#F87171')}
+        {sectionTitle(<Calendar size={18} style={{ color: '#F87171' }} />, `Hari Libur Nasional & Custom (${displayedHolidays.length})`, '#F87171')}
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
           <input type="date" className="input" value={newHolidayDate} onChange={e => setNewHolidayDate(e.target.value)} style={{ colorScheme: 'dark', maxWidth: '180px', fontSize: '0.82rem' }} />
           <input className="input" placeholder="Nama hari libur..." value={newHolidayName} onChange={e => setNewHolidayName(e.target.value)} style={{ fontSize: '0.82rem' }} />
           <button onClick={handleAddHoliday} className="btn btn-primary" style={{ whiteSpace: 'nowrap' }}><Plus size={14} /> Tambah</button>
         </div>
         <div style={{ maxHeight: '250px', overflowY: 'auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem' }}>
-          {allHolidays.map(h => (
+          {displayedHolidays.map(h => (
             <div key={h.date + h.localName} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.65rem', borderRadius: 'var(--radius-sm)', background: 'var(--bg-elevated)', border: '1px solid var(--glass-border)' }}>
               <div><span style={{ fontSize: '0.78rem', fontWeight: '600' }}>{h.localName}</span><span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginLeft: '0.5rem' }}>{h.date}</span></div>
-              {h.isCustom && <button onClick={() => onDeleteHoliday(h.date)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', display: 'flex', padding: '0.2rem' }}><Trash2 size={13} /></button>}
+              {h.isCustom && <button onClick={() => { sounds.success(); onDeleteHoliday(h.date); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', display: 'flex', padding: '0.2rem' }}><Trash2 size={13} /></button>}
             </div>
           ))}
         </div>
@@ -278,8 +281,10 @@ const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incen
           Hapus semua data aplikasi (karyawan, jadwal, log, cuti, pengaturan) dan mulai dari awal. Tindakan ini <strong style={{ color: 'var(--danger)' }}>tidak dapat dibatalkan</strong>.
         </p>
         <button onClick={() => {
+          sounds.error();
           if (confirm('⚠️ PERINGATAN: Semua data akan dihapus permanen!\n\nData yang akan dihapus:\n- Semua karyawan\n- Semua jadwal shift\n- Semua log aktivitas\n- Semua pengajuan cuti\n- Semua pengaturan\n- Riwayat versi\n\nLanjutkan?')) {
             if (confirm('Apakah Anda benar-benar yakin? Ketik OK untuk mengonfirmasi.')) {
+              sounds.success();
               const keysToRemove = ['shift_employees', 'shift_data', 'shift_logs', 'shift_leaves', 'shift_swaps', 'shift_notes', 'shift_custom_holidays', 'shift_templates', 'shift_version_history', 'shift_departments', 'shift_cutoff_date', 'shift_incentive_amount', 'shift_holiday_incentive_amount', 'shift_sp_incentive_amount', 'shift_auto_holiday', 'shift_auto_backup', 'shift_login_enabled', 'shift_login_pin', 'shift_notif', 'shift_lang', 'shift_theme', 'shift_auth', 'shift_role'];
               keysToRemove.forEach(k => localStorage.removeItem(k));
               sessionStorage.clear();

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CalendarOff, Plus, Check, X, Clock, User, Filter, FileText } from 'lucide-react';
 import { leaveTypes } from '../utils/dummyData';
+import { sounds } from '../utils/soundService';
 
 const LeaveManagement = ({ employees, leaves, onAddLeave, onUpdateLeave, shifts, setBatchShifts }) => {
   const [showForm, setShowForm] = useState(false);
@@ -21,10 +22,13 @@ const LeaveManagement = ({ employees, leaves, onAddLeave, onUpdateLeave, shifts,
       createdAt: new Date().toISOString(),
     });
     setFormData({ empId: '', type: 'annual', startDate: '', endDate: '', reason: '' });
+    sounds.success();
+    sounds.modalClose();
     setShowForm(false);
   };
 
   const handleApprove = (leave) => {
+    sounds.success();
     onUpdateLeave({ ...leave, status: 'approved' });
     // Auto-update shifts to libur
     const newShifts = { ...shifts };
@@ -52,7 +56,7 @@ const LeaveManagement = ({ employees, leaves, onAddLeave, onUpdateLeave, shifts,
           </div>
           <p className="page-subtitle" style={{ marginLeft: '1.75rem' }}>Kelola permintaan cuti dan izin karyawan.</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="btn btn-primary">
+        <button onClick={() => { showForm ? sounds.modalClose() : sounds.modalOpen(); setShowForm(!showForm); }} className="btn btn-primary">
           {showForm ? <><X size={15} /> Batal</> : <><Plus size={15} /> Ajukan Cuti</>}
         </button>
       </div>
@@ -143,7 +147,7 @@ const LeaveManagement = ({ employees, leaves, onAddLeave, onUpdateLeave, shifts,
                     {leave.status === 'pending' && (
                       <>
                         <button onClick={() => handleApprove(leave)} className="btn btn-outline" style={{ padding: '0.3rem 0.5rem', color: 'var(--success)', borderColor: 'rgba(52,211,153,0.2)', fontSize: '0.7rem' }}><Check size={12} /> Setujui</button>
-                        <button onClick={() => onUpdateLeave({ ...leave, status: 'rejected' })} className="btn btn-outline" style={{ padding: '0.3rem 0.5rem', color: 'var(--danger)', borderColor: 'rgba(248,113,113,0.2)', fontSize: '0.7rem' }}><X size={12} /> Tolak</button>
+                        <button onClick={() => { sounds.error(); onUpdateLeave({ ...leave, status: 'rejected' }); }} className="btn btn-outline" style={{ padding: '0.3rem 0.5rem', color: 'var(--danger)', borderColor: 'rgba(248,113,113,0.2)', fontSize: '0.7rem' }}><X size={12} /> Tolak</button>
                       </>
                     )}
                   </div>

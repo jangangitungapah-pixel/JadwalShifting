@@ -3,13 +3,27 @@ import { shiftTypes } from './dummyData.js';
 const SHIFT_HOURS = { pagi: 8, sore: 8, malam: 8, libur: 0, 'sp-pagi-sore': 16, 'pagi-sp-sore': 16, 'sp-sore-malam': 16, 'sore-sp-malam': 16 };
 const fmtDate = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
-export const calculateFairnessScore = (employees, shifts, year, month) => {
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const ms = String(month + 1).padStart(2, '0');
+export const calculateFairnessScore = (employees, shifts, year, month, cutOffDate) => {
+  let start, end;
+  if (!cutOffDate || cutOffDate >= 28) {
+    start = new Date(year, month, 1);
+    end = new Date(year, month + 1, 0);
+  } else {
+    start = new Date(year, month - 1, cutOffDate + 1);
+    end = new Date(year, month, cutOffDate);
+  }
+
+  const dates = [];
+  let current = new Date(start);
+  while (current <= end) { dates.push(new Date(current)); current.setDate(current.getDate() + 1); }
+
   const stats = employees.map(emp => {
     let pagi=0, sore=0, malam=0, libur=0, sp=0, totalHours=0;
-    for (let i = 1; i <= daysInMonth; i++) {
-      const ds = `${year}-${ms}-${String(i).padStart(2,'0')}`;
+    for (const d of dates) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const ds = `${y}-${m}-${day}`;
       const s = shifts[ds]?.[emp.id];
       if (s === 'pagi') pagi++;
       else if (s === 'sore') sore++;
@@ -30,25 +44,36 @@ export const calculateFairnessScore = (employees, shifts, year, month) => {
   return { stats, overallScore };
 };
 
-export const calculateWorkloadBalance = (employees, shifts, year, month) => {
-  const { stats } = calculateFairnessScore(employees, shifts, year, month);
+export const calculateWorkloadBalance = (employees, shifts, year, month, cutOffDate) => {
+  const { stats } = calculateFairnessScore(employees, shifts, year, month, cutOffDate);
   if (stats.length === 0) return [];
   const avgHours = stats.reduce((s, x) => s + x.totalHours, 0) / stats.length;
   return stats.map(s => ({ ...s, avgHours, deviation: s.totalHours - avgHours, deviationPct: avgHours > 0 ? ((s.totalHours - avgHours) / avgHours * 100).toFixed(1) : 0 }));
 };
 
-export const calculateOvertime = (employees, shifts, year, month) => {
+export const calculateOvertime = (employees, shifts, year, month, cutOffDate) => {
   const WEEKLY_LIMIT = 40;
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const ms = String(month + 1).padStart(2, '0');
+  let start, end;
+  if (!cutOffDate || cutOffDate >= 28) {
+    start = new Date(year, month, 1);
+    end = new Date(year, month + 1, 0);
+  } else {
+    start = new Date(year, month - 1, cutOffDate + 1);
+    end = new Date(year, month, cutOffDate);
+  }
+
+  const dates = [];
+  let current = new Date(start);
+  while (current <= end) { dates.push(new Date(current)); current.setDate(current.getDate() + 1); }
+
   return employees.map(emp => {
     let weeklyHours = [], currentWeekHours = 0;
-    for (let i = 1; i <= daysInMonth; i++) {
-      const d = new Date(year, month, i);
-      const ds = `${year}-${ms}-${String(i).padStart(2,'0')}`;
+    for (let i = 0; i < dates.length; i++) {
+      const d = dates[i];
+      const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       const s = shifts[ds]?.[emp.id];
       currentWeekHours += (SHIFT_HOURS[s] || 0);
-      if (d.getDay() === 0 || i === daysInMonth) { weeklyHours.push(currentWeekHours); currentWeekHours = 0; }
+      if (d.getDay() === 0 || i === dates.length - 1) { weeklyHours.push(currentWeekHours); currentWeekHours = 0; }
     }
     const overtimeWeeks = weeklyHours.filter(h => h > WEEKLY_LIMIT).length;
     const totalOvertime = weeklyHours.reduce((s, h) => s + Math.max(0, h - WEEKLY_LIMIT), 0);

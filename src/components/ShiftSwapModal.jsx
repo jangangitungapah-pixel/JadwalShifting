@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, ArrowLeftRight, Check, AlertTriangle } from 'lucide-react';
 import { suggestSwap } from '../utils/fairness';
+import { sounds } from '../utils/soundService';
 
 const ShiftSwapModal = ({ onClose, employees, shifts, swapRequests, onAddSwapRequest, onResolveSwap }) => {
   const [empId, setEmpId] = useState(employees[0]?.id || '');
@@ -9,6 +10,7 @@ const ShiftSwapModal = ({ onClose, employees, shifts, swapRequests, onAddSwapReq
   const pending = (swapRequests || []).filter(r => r.status === 'pending');
 
   const handleRequest = (suggestion) => {
+    sounds.success();
     onAddSwapRequest({
       id: Date.now().toString(), fromEmpId: empId, toEmpId: suggestion.employee.id,
       dateStr: suggestion.dateStr, fromShift: suggestion.yourShift, toShift: suggestion.theirShift,
@@ -73,8 +75,8 @@ const ShiftSwapModal = ({ onClose, employees, shifts, swapRequests, onAddSwapReq
                   <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.68rem' }}>{r.dateStr}</span>
                 </div>
                 <div style={{ display: 'flex', gap: '0.3rem' }}>
-                  <button onClick={() => onResolveSwap(r.id, 'approved')} className="btn btn-outline" style={{ padding: '0.25rem', color: 'var(--success)' }}><Check size={13} /></button>
-                  <button onClick={() => onResolveSwap(r.id, 'rejected')} className="btn btn-outline" style={{ padding: '0.25rem', color: 'var(--danger)' }}><X size={13} /></button>
+                  <button onClick={() => { sounds.success(); onResolveSwap(r.id, 'approved'); }} className="btn btn-outline" style={{ padding: '0.25rem', color: 'var(--success)' }}><Check size={13} /></button>
+                  <button onClick={() => { sounds.error(); onResolveSwap(r.id, 'rejected'); }} className="btn btn-outline" style={{ padding: '0.25rem', color: 'var(--danger)' }}><X size={13} /></button>
                 </div>
               </div>
             ))}

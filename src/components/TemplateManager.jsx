@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Save, Trash2, FolderOpen, Plus, Bookmark } from 'lucide-react';
 import { defaultTemplates } from '../utils/dummyData';
+import { sounds } from '../utils/soundService';
 
 const SHIFT_CHIP = {
   pagi: { bg: 'var(--shift-pagi-bg)', text: 'var(--shift-pagi-text)', border: 'var(--shift-pagi-border)', label: 'P' },
@@ -21,6 +22,7 @@ const TemplateManager = ({ onClose, onLoadTemplate, currentPattern }) => {
 
   const handleSave = () => {
     if (!newName.trim() || !currentPattern?.length) return;
+    sounds.success();
     const newTemplate = { id: Date.now().toString(), name: newName.trim(), pattern: [...currentPattern], isDefault: false };
     const updated = [...customTemplates, newTemplate];
     localStorage.setItem('shift_templates', JSON.stringify(updated));
@@ -30,6 +32,7 @@ const TemplateManager = ({ onClose, onLoadTemplate, currentPattern }) => {
   };
 
   const handleDelete = (id) => {
+    sounds.success();
     const updated = customTemplates.filter(t => t.id !== id);
     localStorage.setItem('shift_templates', JSON.stringify(updated));
     setTemplates([...defaultTemplates, ...updated]);
@@ -76,7 +79,7 @@ const TemplateManager = ({ onClose, onLoadTemplate, currentPattern }) => {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '0.35rem' }}>
-                <button onClick={() => { onLoadTemplate(tmpl.pattern); onClose(); }} className="btn btn-outline" style={{ padding: '0.35rem 0.6rem', fontSize: '0.72rem', color: 'var(--color-primary)' }}><FolderOpen size={12} /> Muat</button>
+                <button onClick={() => { sounds.success(); onLoadTemplate(tmpl.pattern); onClose(); }} className="btn btn-outline" style={{ padding: '0.35rem 0.6rem', fontSize: '0.72rem', color: 'var(--color-primary)' }}><FolderOpen size={12} /> Muat</button>
                 {!tmpl.isDefault && <button onClick={() => handleDelete(tmpl.id)} className="btn btn-outline" style={{ padding: '0.35rem', color: 'var(--danger)', borderColor: 'rgba(248,113,113,0.2)' }}><Trash2 size={12} /></button>}
               </div>
             </div>

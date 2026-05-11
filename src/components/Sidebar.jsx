@@ -57,8 +57,8 @@ const Sidebar = ({ activeTab, setActiveTab, theme, toggleTheme, syncStatus, forc
       <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '1.5rem', padding: '0.5rem 0.25rem' }}>
-          <div style={{ width: '38px', height: '38px', borderRadius: 'var(--radius-lg)', background: 'linear-gradient(135deg, var(--color-primary-deep), var(--color-primary))', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 15px rgba(99, 102, 241, 0.35)', animation: 'pulse-glow 4s ease-in-out infinite' }}>
-            <Sparkles size={20} color="white" />
+          <div style={{ width: '38px', height: '38px', borderRadius: 'var(--radius-lg)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 15px rgba(99, 102, 241, 0.35)', animation: 'pulse-glow 4s ease-in-out infinite' }}>
+            <img src="/app-icon.png" alt="ShiftSync Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
           <div>
             <h1 style={{ fontSize: '1.15rem', fontWeight: '800', letterSpacing: '-0.03em', background: 'linear-gradient(135deg, var(--text-primary), var(--color-primary))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', lineHeight: 1.2 }}>ShiftSync</h1>

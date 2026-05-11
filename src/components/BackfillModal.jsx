@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Rewind, CalendarRange, Users, User, AlertTriangle, Info, Plus, RotateCcw } from 'lucide-react';
 import { shiftTypes } from '../utils/dummyData';
+import { sounds } from '../utils/soundService';
 
 const DEFAULT_PATTERN = ['pagi','pagi','sore','sore','malam','malam','libur','libur'];
 
@@ -29,6 +30,7 @@ const BackfillModal = ({ onClose, onBackfill, employees, monthNames }) => {
 
   const handleBackfill = () => {
     if (!isValid) return;
+    sounds.success();
     const targets = targetMode === 'all' ? employees : employees.filter(e => e.id === selectedEmployee);
     onBackfill(new Date(fillStartDate), new Date(refDate), targets, pattern);
     onClose();

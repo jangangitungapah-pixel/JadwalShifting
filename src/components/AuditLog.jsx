@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FileText, Search, Filter, Download, Clock, ArrowRight } from 'lucide-react';
+import { sounds } from '../utils/soundService';
 
 const AuditLog = ({ logs }) => {
   const [search, setSearch] = useState('');
@@ -11,6 +12,7 @@ const AuditLog = ({ logs }) => {
   };
 
   const exportLogs = () => {
+    sounds.success();
     const text = filtered.map(l => `[${formatTime(l.timestamp)}] ${l.message}`).join('\n');
     const blob = new Blob([text], { type: 'text/plain' });
     const a = document.createElement('a');

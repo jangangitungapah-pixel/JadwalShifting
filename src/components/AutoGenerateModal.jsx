@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Wand2, CalendarRange, Users, User, AlertTriangle, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { shiftTypes } from '../utils/dummyData';
+import { sounds } from '../utils/soundService';
 
 const DEFAULT_PATTERN = ['pagi', 'pagi', 'sore', 'sore', 'malam', 'malam', 'libur', 'libur'];
 
@@ -38,6 +39,7 @@ const AutoGenerateModal = ({ onClose, onGenerate, employees, monthNames }) => {
 
   const handleGenerate = () => {
     if (!isValid) return;
+    sounds.success();
     const targets = targetMode === 'all' ? employees : employees.filter(e => e.id === selectedEmployee);
     onGenerate(new Date(startDate), new Date(endDate), targets, pattern);
     onClose();

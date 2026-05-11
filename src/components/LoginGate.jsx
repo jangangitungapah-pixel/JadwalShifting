@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Lock, Eye, EyeOff, Sparkles, Shield } from 'lucide-react';
+import { sounds } from '../utils/soundService';
 
 const LoginGate = ({ children, onLogin }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -19,11 +20,13 @@ const LoginGate = ({ children, onLogin }) => {
   const handleLogin = (e) => {
     e.preventDefault();
     if (pin === storedPin) {
+      sounds.success();
       sessionStorage.setItem('shift_auth', 'true');
       sessionStorage.setItem('shift_role', role);
       setIsAuthenticated(true);
       if (onLogin) onLogin(role);
     } else {
+      sounds.error();
       setError('PIN salah. Silakan coba lagi.');
       setPin('');
     }
@@ -39,8 +42,8 @@ const LoginGate = ({ children, onLogin }) => {
         <div style={{ position: 'absolute', top: 0, left: '15%', right: '15%', height: '2px', background: 'linear-gradient(90deg, transparent, var(--color-primary), var(--color-secondary), transparent)' }} />
 
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
-          <div style={{ width: '56px', height: '56px', borderRadius: 'var(--radius-xl)', background: 'linear-gradient(135deg, var(--color-primary-deep), var(--color-primary))', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 30px rgba(99,102,241,0.4)' }}>
-            <Sparkles size={28} color="white" />
+          <div style={{ width: '56px', height: '56px', borderRadius: 'var(--radius-xl)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 30px rgba(99,102,241,0.4)' }}>
+            <img src="/app-icon.png" alt="ShiftSync Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
         </div>
 

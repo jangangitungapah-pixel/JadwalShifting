@@ -1,17 +1,17 @@
 export const initialEmployees = [];
 
 export const shiftTypes = [
-  { id: 'pagi', label: 'Pagi', time: '08:00 - 16:00', colorClass: 'shift-pagi', hours: 8 },
-  { id: 'sore', label: 'Sore', time: '16:00 - 00:00', colorClass: 'shift-sore', hours: 8 },
-  { id: 'malam', label: 'Malam', time: '00:00 - 08:00', colorClass: 'shift-malam', hours: 8 },
-  { id: 'libur', label: 'Libur', time: 'Off', colorClass: 'shift-libur', hours: 0 }
+  { id: 'pagi', label: 'Pagi', shortLabel: 'P', time: '08:00 - 16:00', colorClass: 'shift-pagi', hours: 8 },
+  { id: 'sore', label: 'Sore', shortLabel: 'S', time: '16:00 - 00:00', colorClass: 'shift-sore', hours: 8 },
+  { id: 'malam', label: 'Malam', shortLabel: 'M', time: '00:00 - 08:00', colorClass: 'shift-malam', hours: 8 },
+  { id: 'libur', label: 'Libur', shortLabel: 'L', time: 'Off', colorClass: 'shift-libur', hours: 0 }
 ];
 
 export const longShiftTypes = [
-  { id: 'sp-pagi-sore', label: 'SP Pagi + Sore', shortLabel: 'SP P+S', time: '08:00 - 00:00', colorClass: 'shift-sp-pagi-sore', desc: 'Shift Pengganti Pagi + Sore', hours: 16 },
-  { id: 'pagi-sp-sore', label: 'Pagi + SP Sore', shortLabel: 'P+SP S', time: '08:00 - 00:00', colorClass: 'shift-pagi-sp-sore', desc: 'Pagi + Shift Pengganti Sore', hours: 16 },
-  { id: 'sp-sore-malam', label: 'SP Sore + Malam', shortLabel: 'SP S+M', time: '16:00 - 08:00', colorClass: 'shift-sp-sore-malam', desc: 'Shift Pengganti Sore + Malam', hours: 16 },
-  { id: 'sore-sp-malam', label: 'Sore + SP Malam', shortLabel: 'S+SP M', time: '16:00 - 08:00', colorClass: 'shift-sore-sp-malam', desc: 'Sore + Shift Pengganti Malam', hours: 16 },
+  { id: 'sp-pagi-sore', label: 'SP Pagi + Sore', shortLabel: 'SP/P + S', time: '08:00 - 00:00', colorClass: 'shift-sp-pagi-sore', desc: 'Shift Pengganti Pagi + Sore', hours: 16 },
+  { id: 'pagi-sp-sore', label: 'Pagi + SP Sore', shortLabel: 'P + SP/S', time: '08:00 - 00:00', colorClass: 'shift-pagi-sp-sore', desc: 'Pagi + Shift Pengganti Sore', hours: 16 },
+  { id: 'sp-sore-malam', label: 'SP Sore + Malam', shortLabel: 'SP/S + M', time: '16:00 - 08:00', colorClass: 'shift-sp-sore-malam', desc: 'Shift Pengganti Sore + Malam', hours: 16 },
+  { id: 'sore-sp-malam', label: 'Sore + SP Malam', shortLabel: 'S + SP/M', time: '16:00 - 08:00', colorClass: 'shift-sore-sp-malam', desc: 'Sore + Shift Pengganti Malam', hours: 16 },
 ];
 
 export const allShiftTypes = [...shiftTypes, ...longShiftTypes];

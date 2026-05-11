@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Search, Edit3, Trash2, X, Check, UserCircle, Zap } from 'lucide-react';
 import EmployeeProfile from './EmployeeProfile';
 import { calculateFairnessScore } from '../utils/fairness';
+import { sounds } from '../utils/soundService';
 
 const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments, isViewer }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,14 +21,16 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
 
   const resetForm = () => { setFormData({ name: '', role: '', phone: '', email: '', department: 'Umum' }); setEditingEmployee(null); };
 
-  const openAddModal = () => { resetForm(); setIsModalOpen(true); };
-  const openEditModal = (emp) => { setEditingEmployee(emp); setFormData({ name: emp.name, role: emp.role, phone: emp.phone || '', email: emp.email || '', department: emp.department || 'Umum' }); setIsModalOpen(true); };
+  const openAddModal = () => { sounds.modalOpen(); resetForm(); setIsModalOpen(true); };
+  const openEditModal = (emp) => { sounds.modalOpen(); setEditingEmployee(emp); setFormData({ name: emp.name, role: emp.role, phone: emp.phone || '', email: emp.email || '', department: emp.department || 'Umum' }); setIsModalOpen(true); };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name || !formData.role) return;
     if (editingEmployee) onEdit({ ...editingEmployee, ...formData });
     else onAdd(formData);
+    sounds.success();
+    sounds.modalClose();
     setIsModalOpen(false); resetForm();
   };
 
@@ -98,17 +101,17 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
                 )}
 
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={() => setProfileEmployee(emp)} className="btn btn-outline" style={{ flex: 1, fontSize: '0.75rem', padding: '0.45rem', color: 'var(--color-secondary)', borderColor: 'rgba(34,211,238,0.2)' }}><UserCircle size={13} /> Profil</button>
+                  <button onClick={() => { sounds.modalOpen(); setProfileEmployee(emp); }} className="btn btn-outline" style={{ flex: 1, fontSize: '0.75rem', padding: '0.45rem', color: 'var(--color-secondary)', borderColor: 'rgba(34,211,238,0.2)' }}><UserCircle size={13} /> Profil</button>
                   {!isViewer && (
                     <>
                       <button onClick={() => openEditModal(emp)} className="btn btn-outline" style={{ padding: '0.45rem', fontSize: '0.75rem' }}><Edit3 size={13} /></button>
                       {deleteConfirmId === emp.id ? (
                         <div style={{ display: 'flex', gap: '0.25rem' }}>
-                          <button onClick={() => { onDelete(emp.id); setDeleteConfirmId(null); }} className="btn btn-danger" style={{ padding: '0.45rem' }}><Check size={13} /></button>
-                          <button onClick={() => setDeleteConfirmId(null)} className="btn btn-outline" style={{ padding: '0.45rem' }}><X size={13} /></button>
+                          <button onClick={() => { sounds.success(); onDelete(emp.id); setDeleteConfirmId(null); }} className="btn btn-danger" style={{ padding: '0.45rem' }}><Check size={13} /></button>
+                          <button onClick={() => { sounds.error(); setDeleteConfirmId(null); }} className="btn btn-outline" style={{ padding: '0.45rem' }}><X size={13} /></button>
                         </div>
                       ) : (
-                        <button onClick={() => setDeleteConfirmId(emp.id)} className="btn btn-outline" style={{ padding: '0.45rem', color: 'var(--danger)', borderColor: 'rgba(248,113,113,0.2)' }}><Trash2 size={13} /></button>
+                        <button onClick={() => { sounds.error(); setDeleteConfirmId(emp.id); }} className="btn btn-outline" style={{ padding: '0.45rem', color: 'var(--danger)', borderColor: 'rgba(248,113,113,0.2)' }}><Trash2 size={13} /></button>
                       )}
                     </>
                   )}
@@ -124,7 +127,7 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
         <div className="animate-fade-in" style={{ position: 'fixed', inset: 0, backgroundColor: 'var(--bg-overlay)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
           <form onSubmit={handleSubmit} className="glass-card" style={{ width: '100%', maxWidth: '420px', padding: '1.75rem', animation: 'slideUp 0.4s cubic-bezier(0.16,1,0.3,1)', position: 'relative', border: '1px solid var(--glass-border-hover)' }}>
             <div style={{ position: 'absolute', top: 0, left: '15%', right: '15%', height: '2px', background: 'linear-gradient(90deg, transparent, var(--color-secondary), transparent)' }} />
-            <button type="button" onClick={() => setIsModalOpen(false)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', color: 'var(--text-secondary)', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={16} /></button>
+            <button type="button" onClick={() => { sounds.modalClose(); setIsModalOpen(false); }} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', color: 'var(--text-secondary)', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={16} /></button>
             <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1.25rem' }}>{editingEmployee ? 'Edit Karyawan' : 'Tambah Karyawan Baru'}</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div><label className="label">Nama Lengkap</label><input className="input" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required placeholder="Nama lengkap" /></div>
@@ -138,7 +141,7 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
               )}
             </div>
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
-              <button type="button" onClick={() => setIsModalOpen(false)} className="btn btn-outline" style={{ flex: 1 }}>Batal</button>
+              <button type="button" onClick={() => { sounds.modalClose(); setIsModalOpen(false); }} className="btn btn-outline" style={{ flex: 1 }}>Batal</button>
               <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>{editingEmployee ? 'Simpan' : 'Tambah'}</button>
             </div>
           </form>
@@ -146,7 +149,7 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
       )}
 
       {/* Profile Modal */}
-      {profileEmployee && <EmployeeProfile employee={profileEmployee} onClose={() => setProfileEmployee(null)} onUpdate={(emp) => { onEdit(emp); setProfileEmployee(null); }} shifts={shifts} />}
+      {profileEmployee && <EmployeeProfile employee={profileEmployee} onClose={() => { sounds.modalClose(); setProfileEmployee(null); }} onUpdate={(emp) => { onEdit(emp); sounds.success(); sounds.modalClose(); setProfileEmployee(null); }} shifts={shifts} />}
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { syncToApi, subscribeToAllApi, syncAllToApi, loadAllFromApi } from './utils/apiSync';
+import { getHolidays } from './utils/holidayService';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import EmployeeList from './components/EmployeeList';
@@ -14,6 +15,7 @@ import { initialEmployees, initialShifts } from './utils/dummyData';
 import { createUndoManager } from './utils/undoManager';
 import { saveVersion, startAutoBackup, stopAutoBackup } from './utils/versionHistory';
 import { requestNotificationPermission, notifyScheduleChange } from './utils/notifications';
+import { sounds } from './utils/soundService';
 import './App.css';
 
 function App() {
@@ -85,14 +87,8 @@ function App() {
     // Initialize undo manager
     undoRef.current = createUndoManager(shts);
 
-    // Fetch holidays
-    const currYear = new Date().getFullYear();
-    Promise.all([
-      fetch(`https://date.nager.at/api/v3/PublicHolidays/${currYear - 1}/ID`).then(r => r.ok ? r.json() : []),
-      fetch(`https://date.nager.at/api/v3/PublicHolidays/${currYear}/ID`).then(r => r.ok ? r.json() : []),
-      fetch(`https://date.nager.at/api/v3/PublicHolidays/${currYear + 1}/ID`).then(r => r.ok ? r.json() : [])
-    ]).then(([prev, curr, next]) => setHolidays([...prev, ...curr, ...next]))
-    .catch(err => console.error("Failed to fetch holidays:", err));
+    // Fetch holidays from the new service
+    getHolidays().then(data => setHolidays(data));
 
     // Auto-backup
     const autoBackupEnabled = localStorage.getItem('shift_auto_backup') !== 'false';
@@ -165,6 +161,31 @@ function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [shifts]);
+
+  // Global UI Sounds
+  useEffect(() => {
+    const handleGlobalClick = (e) => {
+      sounds.init();
+      const target = e.target.closest('button, a, .clickable, .btn, .btn-icon, [role="button"]');
+      if (target) sounds.click();
+    };
+    const handleGlobalHover = (e) => {
+      const target = e.target.closest('button, a, .btn, .btn-icon, .nav-item');
+      if (target && !target.dataset.hovered) {
+        target.dataset.hovered = 'true';
+        sounds.hover();
+        target.addEventListener('mouseleave', () => {
+          target.dataset.hovered = '';
+        }, { once: true });
+      }
+    };
+    document.addEventListener('mousedown', handleGlobalClick);
+    document.addEventListener('mouseover', handleGlobalHover);
+    return () => {
+      document.removeEventListener('mousedown', handleGlobalClick);
+      document.removeEventListener('mouseover', handleGlobalHover);
+    };
+  }, []);
 
   const allHolidays = [
     ...holidays,
@@ -381,10 +402,10 @@ function App() {
             {activeTab === 'employees' && <EmployeeList employees={employees} onAdd={addEmployee} onEdit={editEmployee} onDelete={deleteEmployee} shifts={shifts} departments={departments} isViewer={isViewer} />}
             {activeTab === 'calendar' && <CalendarView employees={employees} shifts={shifts} updateShift={updateShift} setBatchShifts={setBatchShifts} autoHolidayEnabled={autoHolidayEnabled} holidays={allHolidays} canUndo={canUndo} canRedo={canRedo} onUndo={handleUndo} onRedo={handleRedo} notes={notes} updateNote={updateNote} swapRequests={swapRequests} onAddSwapRequest={addSwapRequest} onResolveSwap={resolveSwap} isViewer={isViewer} />}
             {activeTab === 'reports' && <Reports employees={employees} shifts={shifts} cutOffDate={cutOffDate} incentiveAmount={incentiveAmount} holidayIncentiveAmount={holidayIncentiveAmount} spIncentiveAmount={spIncentiveAmount} holidays={allHolidays} />}
-            {activeTab === 'analytics' && <AnalyticsView employees={employees} shifts={shifts} incentiveAmount={incentiveAmount} holidayIncentiveAmount={holidayIncentiveAmount} spIncentiveAmount={spIncentiveAmount} holidays={allHolidays} />}
+            {activeTab === 'analytics' && <AnalyticsView employees={employees} shifts={shifts} cutOffDate={cutOffDate} incentiveAmount={incentiveAmount} holidayIncentiveAmount={holidayIncentiveAmount} spIncentiveAmount={spIncentiveAmount} holidays={allHolidays} />}
             {activeTab === 'leave' && <LeaveManagement employees={employees} leaves={leaves} onAddLeave={addLeave} onUpdateLeave={updateLeave} shifts={shifts} setBatchShifts={setBatchShifts} />}
             {activeTab === 'audit' && <AuditLog logs={activityLogs} />}
-            {activeTab === 'settings' && <SettingsView autoHolidayEnabled={autoHolidayEnabled} toggleAutoHoliday={toggleAutoHoliday} cutOffDate={cutOffDate} incentiveAmount={incentiveAmount} holidayIncentiveAmount={holidayIncentiveAmount} spIncentiveAmount={spIncentiveAmount} updateSettings={updateSettings} customHolidays={customHolidays} apiHolidays={holidays} onAddHoliday={addCustomHoliday} onDeleteHoliday={deleteCustomHoliday} theme={theme} toggleTheme={toggleTheme} departments={departments} updateDepartments={updateDepartments} notificationsEnabled={notificationsEnabled} toggleNotifications={toggleNotifications} shifts={shifts} syncStatus={syncStatus} forceSync={forceSync} />}
+            {activeTab === 'settings' && <SettingsView autoHolidayEnabled={autoHolidayEnabled} toggleAutoHoliday={toggleAutoHoliday} cutOffDate={cutOffDate} incentiveAmount={incentiveAmount} holidayIncentiveAmount={holidayIncentiveAmount} spIncentiveAmount={spIncentiveAmount} updateSettings={updateSettings} allHolidays={allHolidays} onAddHoliday={addCustomHoliday} onDeleteHoliday={deleteCustomHoliday} theme={theme} toggleTheme={toggleTheme} departments={departments} updateDepartments={updateDepartments} notificationsEnabled={notificationsEnabled} toggleNotifications={toggleNotifications} shifts={shifts} syncStatus={syncStatus} forceSync={forceSync} />}
           </div>
         </main>
       </div>
