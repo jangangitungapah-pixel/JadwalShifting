@@ -3,13 +3,15 @@ import { Plus, Search, Edit3, Trash2, X, Check, UserCircle, Zap } from 'lucide-r
 import EmployeeProfile from './EmployeeProfile';
 import { calculateFairnessScore } from '../utils/fairness';
 import { sounds } from '../utils/soundService';
+import { useTranslation } from '../utils/i18n.jsx';
 
 const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments, isViewer }) => {
+  const { t, lang } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [profileEmployee, setProfileEmployee] = useState(null);
-  const [formData, setFormData] = useState({ name: '', role: '', phone: '', email: '', department: 'Umum' });
+  const [formData, setFormData] = useState({ name: '', role: '', phone: '', email: '', department: 'Umum', projectType: 'old', materialAllowance: 0 });
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   const today = new Date();
@@ -19,10 +21,10 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
     emp.name.toLowerCase().includes(searchTerm.toLowerCase()) || emp.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const resetForm = () => { setFormData({ name: '', role: '', phone: '', email: '', department: 'Umum' }); setEditingEmployee(null); };
+  const resetForm = () => { setFormData({ name: '', role: '', phone: '', email: '', department: 'Umum', projectType: 'old', materialAllowance: 0 }); setEditingEmployee(null); };
 
   const openAddModal = () => { sounds.modalOpen(); resetForm(); setIsModalOpen(true); };
-  const openEditModal = (emp) => { sounds.modalOpen(); setEditingEmployee(emp); setFormData({ name: emp.name, role: emp.role, phone: emp.phone || '', email: emp.email || '', department: emp.department || 'Umum' }); setIsModalOpen(true); };
+  const openEditModal = (emp) => { sounds.modalOpen(); setEditingEmployee(emp); setFormData({ name: emp.name, role: emp.role, phone: emp.phone || '', email: emp.email || '', department: emp.department || 'Umum', projectType: emp.projectType || 'old', materialAllowance: emp.materialAllowance || 0 }); setIsModalOpen(true); };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -41,24 +43,24 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
             <div style={{ width: '8px', height: '32px', borderRadius: '4px', background: 'linear-gradient(180deg, #22D3EE, var(--color-primary))' }} />
-            <h2 className="page-title">Manajemen Karyawan</h2>
+            <h2 className="page-title">{t('emp.title')}</h2>
           </div>
-          <p className="page-subtitle" style={{ marginLeft: '1.75rem' }}>Daftar seluruh karyawan dan perannya.</p>
+          <p className="page-subtitle" style={{ marginLeft: '1.75rem' }}>{t('emp.subtitle')}</p>
         </div>
-        {!isViewer && <button onClick={openAddModal} className="btn btn-primary"><Plus size={17} /> Tambah Karyawan</button>}
+        {!isViewer && <button onClick={openAddModal} className="btn btn-primary"><Plus size={17} /> {t('emp.add')}</button>}
       </div>
 
       {/* Search */}
       <div className="animate-fade-in-up delay-100" style={{ position: 'relative', marginBottom: '1.25rem', maxWidth: '380px' }}>
         <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-        <input className="input" placeholder="Cari nama atau jabatan..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} style={{ paddingLeft: '2.75rem' }} />
+        <input className="input" placeholder={t('emp.search')} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} style={{ paddingLeft: '2.75rem' }} />
       </div>
 
       {/* Grid */}
       {filteredEmployees.length === 0 ? (
         <div className="glass-card animate-fade-in-up delay-200" style={{ padding: '3rem', textAlign: 'center' }}>
-          <p style={{ color: 'var(--text-muted)', fontSize: '1rem', marginBottom: '1rem' }}>Tidak ada karyawan yang ditemukan.</p>
-          {!isViewer && <button onClick={openAddModal} className="btn btn-primary"><Plus size={17} /> Tambah Karyawan Pertama</button>}
+          <p style={{ color: 'var(--text-muted)', fontSize: '1rem', marginBottom: '1rem' }}>{t('emp.none')}</p>
+          {!isViewer && <button onClick={openAddModal} className="btn btn-primary"><Plus size={17} /> {t('emp.addFirst')}</button>}
         </div>
       ) : (
         <div className="animate-fade-in-up delay-200" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
@@ -101,7 +103,7 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
                 )}
 
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={() => { sounds.modalOpen(); setProfileEmployee(emp); }} className="btn btn-outline" style={{ flex: 1, fontSize: '0.75rem', padding: '0.45rem', color: 'var(--color-secondary)', borderColor: 'rgba(34,211,238,0.2)' }}><UserCircle size={13} /> Profil</button>
+                  <button onClick={() => { sounds.modalOpen(); setProfileEmployee(emp); }} className="btn btn-outline" style={{ flex: 1, fontSize: '0.75rem', padding: '0.45rem', color: 'var(--color-secondary)', borderColor: 'rgba(34,211,238,0.2)' }}><UserCircle size={13} /> {t('emp.profile')}</button>
                   {!isViewer && (
                     <>
                       <button onClick={() => openEditModal(emp)} className="btn btn-outline" style={{ padding: '0.45rem', fontSize: '0.75rem' }}><Edit3 size={13} /></button>
@@ -128,21 +130,32 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
           <form onSubmit={handleSubmit} className="glass-card" style={{ width: '100%', maxWidth: '420px', padding: '1.75rem', animation: 'slideUp 0.4s cubic-bezier(0.16,1,0.3,1)', position: 'relative', border: '1px solid var(--glass-border-hover)' }}>
             <div style={{ position: 'absolute', top: 0, left: '15%', right: '15%', height: '2px', background: 'linear-gradient(90deg, transparent, var(--color-secondary), transparent)' }} />
             <button type="button" onClick={() => { sounds.modalClose(); setIsModalOpen(false); }} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', color: 'var(--text-secondary)', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={16} /></button>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1.25rem' }}>{editingEmployee ? 'Edit Karyawan' : 'Tambah Karyawan Baru'}</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div><label className="label">Nama Lengkap</label><input className="input" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required placeholder="Nama lengkap" /></div>
-              <div><label className="label">Jabatan</label><input className="input" value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} required placeholder="Jabatan / Peran" /></div>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1.25rem' }}>{editingEmployee ? t('emp.edit') : t('emp.addNew')}</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '60vh', overflowY: 'auto', paddingRight: '0.5rem' }}>
+              <div><label className="label">{t('emp.name')}</label><input className="input" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required placeholder={t('emp.name')} /></div>
+              <div><label className="label">{t('emp.role')}</label><input className="input" value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} required placeholder={t('emp.role')} /></div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div><label className="label">Telepon</label><input className="input" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="08xxx" /></div>
                 <div><label className="label">Email</label><input className="input" type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="email" /></div>
+              </div>
+              <div>
+                <label className="label">{lang === 'en' ? 'Project Type' : 'Tipe Project'}</label>
+                <select className="input" value={formData.projectType} onChange={e => setFormData({ ...formData, projectType: e.target.value })} style={{ colorScheme: 'dark' }}>
+                  <option value="old">Old Project (Rp 2.300.000/bln)</option>
+                  <option value="new">New Project (Rp 2.800.000/bln)</option>
+                </select>
+              </div>
+              <div>
+                <label className="label">{lang === 'en' ? 'Material Allowance (Rp)' : 'Tunjangan Material (Rp)'}</label>
+                <input className="input" type="number" value={formData.materialAllowance} onChange={e => setFormData({ ...formData, materialAllowance: parseInt(e.target.value) || 0 })} placeholder="0" />
               </div>
               {departments && departments.length > 1 && (
                 <div><label className="label">Departemen</label><select className="input" value={formData.department} onChange={e => setFormData({ ...formData, department: e.target.value })} style={{ colorScheme: 'dark' }}>{departments.map(d => <option key={d} value={d}>{d}</option>)}</select></div>
               )}
             </div>
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
-              <button type="button" onClick={() => { sounds.modalClose(); setIsModalOpen(false); }} className="btn btn-outline" style={{ flex: 1 }}>Batal</button>
-              <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>{editingEmployee ? 'Simpan' : 'Tambah'}</button>
+              <button type="button" onClick={() => { sounds.modalClose(); setIsModalOpen(false); }} className="btn btn-outline" style={{ flex: 1 }}>{t('common.cancel')}</button>
+              <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>{editingEmployee ? t('common.save') : t('common.add')}</button>
             </div>
           </form>
         </div>

@@ -3,10 +3,12 @@ import { Users, CalendarCheck, CalendarOff as CalendarX, AlertTriangle, Clock, S
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { calculateFairnessScore } from '../utils/fairness';
 import { allShiftTypes } from '../utils/dummyData';
+import { useTranslation } from '../utils/i18n.jsx';
 
 const COLORS = ['#60A5FA', '#FBBF24', '#A78BFA', '#F87171', '#2DD4BF', '#F472B6'];
 
 const Dashboard = ({ employees, shifts, activityLogs, leaves, swapRequests }) => {
+  const { t, lang } = useTranslation();
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const year = today.getFullYear();
@@ -58,10 +60,10 @@ const Dashboard = ({ employees, shifts, activityLogs, leaves, swapRequests }) =>
   const pendingSwaps = (swapRequests || []).filter(r => r.status === 'pending').length;
 
   const statCards = [
-    { label: 'Total Karyawan', value: employees.length, icon: Users, color: '#818CF8', bg: 'var(--color-primary-light)', glow: 'var(--color-primary-glow)' },
-    { label: 'Kerja Hari Ini', value: working, icon: CalendarCheck, color: '#34D399', bg: 'var(--success-bg)', glow: 'rgba(52,211,153,0.15)' },
-    { label: 'Libur Hari Ini', value: off, icon: CalendarX, color: '#F87171', bg: 'var(--danger-bg)', glow: 'rgba(248,113,113,0.15)' },
-    { label: 'Long Shift Bulan Ini', value: monthlyStats.spCount, icon: Shield, color: '#F472B6', bg: 'var(--color-accent-glow)', glow: 'rgba(244,114,182,0.15)' },
+    { label: t('dash.totalEmployees'), value: employees.length, icon: Users, color: '#818CF8', bg: 'var(--color-primary-light)', glow: 'var(--color-primary-glow)' },
+    { label: t('dash.workingToday'), value: working, icon: CalendarCheck, color: '#34D399', bg: 'var(--success-bg)', glow: 'rgba(52,211,153,0.15)' },
+    { label: t('dash.offToday'), value: off, icon: CalendarX, color: '#F87171', bg: 'var(--danger-bg)', glow: 'rgba(248,113,113,0.15)' },
+    { label: t('dash.longShiftMonth'), value: monthlyStats.spCount, icon: Shield, color: '#F472B6', bg: 'var(--color-accent-glow)', glow: 'rgba(244,114,182,0.15)' },
   ];
 
   const formatTime = (ts) => {
@@ -77,9 +79,9 @@ const Dashboard = ({ employees, shifts, activityLogs, leaves, swapRequests }) =>
       <div className="page-header animate-fade-in-up">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
           <div style={{ width: '8px', height: '32px', borderRadius: '4px', background: 'linear-gradient(180deg, var(--color-primary), var(--color-secondary))', boxShadow: '0 0 12px rgba(129,140,248,0.2)' }} />
-          <h2 className="page-title">Dashboard Overview</h2>
+          <h2 className="page-title">{t('dash.title')}</h2>
         </div>
-        <p className="page-subtitle" style={{ marginLeft: '1.75rem' }}>Selamat datang kembali! Berikut ringkasan jadwal hari ini.</p>
+        <p className="page-subtitle" style={{ marginLeft: '1.75rem' }}>{t('dash.welcome')}</p>
       </div>
 
       {/* Stat Cards */}
@@ -105,23 +107,22 @@ const Dashboard = ({ employees, shifts, activityLogs, leaves, swapRequests }) =>
         <div className="glass-card animate-fade-in-up delay-300" style={{ padding: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
             <AlertTriangle size={16} style={{ color: monthlyStats.conflicts > 0 ? 'var(--danger)' : 'var(--success)' }} />
-            <h3 style={{ fontSize: '0.9rem', fontWeight: '700' }}>Konflik Jadwal</h3>
+            <h3 style={{ fontSize: '0.9rem', fontWeight: '700' }}>{t('dash.conflicts')}</h3>
           </div>
           {monthlyStats.conflicts === 0 ? (
-            <p style={{ fontSize: '0.82rem', color: 'var(--success)' }}>✨ Tidak ada konflik.</p>
+            <p style={{ fontSize: '0.82rem', color: 'var(--success)' }}>✨ {t('dash.noConflict')}</p>
           ) : (
             <div style={{ padding: '0.65rem', borderRadius: 'var(--radius-md)', background: 'var(--danger-bg)', border: '1px solid rgba(248,113,113,0.15)' }}>
               <p style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--danger)' }}>{monthlyStats.conflicts}</p>
-              <p style={{ fontSize: '0.72rem', color: 'var(--danger)', marginTop: '0.2rem' }}>Pelanggaran Malam→Pagi</p>
+              <p style={{ fontSize: '0.72rem', color: 'var(--danger)', marginTop: '0.2rem' }}>{t('dash.conflictFound')}</p>
             </div>
           )}
         </div>
 
-        {/* Fairness Score */}
         <div className="glass-card animate-fade-in-up delay-400" style={{ padding: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
             <Zap size={16} style={{ color: '#2DD4BF' }} />
-            <h3 style={{ fontSize: '0.9rem', fontWeight: '700' }}>Skor Keadilan</h3>
+            <h3 style={{ fontSize: '0.9rem', fontWeight: '700' }}>{t('dash.fairnessScore')}</h3>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <p style={{ fontSize: '2.5rem', fontWeight: '900', background: `linear-gradient(135deg, ${fairness.overallScore >= 70 ? '#2DD4BF' : fairness.overallScore >= 40 ? '#FBBF24' : '#F87171'}, var(--text-primary))`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{fairness.overallScore}%</p>
@@ -131,20 +132,19 @@ const Dashboard = ({ employees, shifts, activityLogs, leaves, swapRequests }) =>
           </div>
         </div>
 
-        {/* Pending items */}
         <div className="glass-card animate-fade-in-up delay-500" style={{ padding: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
             <Clock size={16} style={{ color: '#FBBF24' }} />
-            <h3 style={{ fontSize: '0.9rem', fontWeight: '700' }}>Menunggu Tindakan</h3>
+            <h3 style={{ fontSize: '0.9rem', fontWeight: '700' }}>{lang === 'en' ? 'Pending Actions' : 'Menunggu Tindakan'}</h3>
           </div>
           <div style={{ display: 'flex', gap: '0.75rem' }}>
             <div style={{ flex: 1, padding: '0.65rem', borderRadius: 'var(--radius-md)', background: 'var(--warning-bg)', border: '1px solid rgba(251,191,36,0.15)', textAlign: 'center' }}>
               <p style={{ fontSize: '1.3rem', fontWeight: '800', color: 'var(--warning)' }}>{pendingLeaves}</p>
-              <p style={{ fontSize: '0.62rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>Cuti</p>
+              <p style={{ fontSize: '0.62rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>{lang === 'en' ? 'Leave' : 'Cuti'}</p>
             </div>
             <div style={{ flex: 1, padding: '0.65rem', borderRadius: 'var(--radius-md)', background: 'var(--info-bg)', border: '1px solid rgba(96,165,250,0.15)', textAlign: 'center' }}>
               <p style={{ fontSize: '1.3rem', fontWeight: '800', color: 'var(--info)' }}>{pendingSwaps}</p>
-              <p style={{ fontSize: '0.62rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>Tukar Shift</p>
+              <p style={{ fontSize: '0.62rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>{lang === 'en' ? 'Swaps' : 'Tukar Shift'}</p>
             </div>
           </div>
         </div>
@@ -155,7 +155,7 @@ const Dashboard = ({ employees, shifts, activityLogs, leaves, swapRequests }) =>
         <div className="glass-card animate-fade-in-up delay-500" style={{ padding: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
             <TrendingUp size={16} style={{ color: 'var(--color-primary)' }} />
-            <h3 style={{ fontSize: '0.9rem', fontWeight: '700' }}>Distribusi Shift Bulan Ini</h3>
+            <h3 style={{ fontSize: '0.9rem', fontWeight: '700' }}>{t('dash.shiftDistribution')}</h3>
           </div>
           {shiftDistribution.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
@@ -171,10 +171,10 @@ const Dashboard = ({ employees, shifts, activityLogs, leaves, swapRequests }) =>
 
         {/* Activity Log */}
         <div className="glass-card animate-fade-in-up delay-600" style={{ padding: '1.25rem' }}>
-          <h3 style={{ fontSize: '0.9rem', fontWeight: '700', marginBottom: '0.85rem' }}>Aktivitas Terkini</h3>
+          <h3 style={{ fontSize: '0.9rem', fontWeight: '700', marginBottom: '0.85rem' }}>{t('dash.recentActivity')}</h3>
           <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
             {activityLogs.length === 0 ? (
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Belum ada aktivitas tercatat.</p>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{t('dash.noActivity')}</p>
             ) : (
               activityLogs.slice(0, 8).map((log, i) => (
                 <div key={log.id || i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', padding: '0.55rem 0', borderBottom: i < 7 ? '1px solid var(--glass-border)' : 'none' }}>

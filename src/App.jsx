@@ -11,6 +11,9 @@ import AnalyticsView from './components/AnalyticsView';
 import LeaveManagement from './components/LeaveManagement';
 import AuditLog from './components/AuditLog';
 import LoginGate from './components/LoginGate';
+import Payroll from './components/Payroll';
+import ShiftBidding from './components/ShiftBidding';
+import AIChatbot from './components/AIChatbot';
 import { initialEmployees, initialShifts } from './utils/dummyData';
 import { createUndoManager } from './utils/undoManager';
 import { saveVersion, startAutoBackup, stopAutoBackup } from './utils/versionHistory';
@@ -27,8 +30,10 @@ function App() {
   const [notes, setNotes] = useState(() => { try { return JSON.parse(localStorage.getItem('shift_notes') || '{}'); } catch { return {}; } });
   const [leaves, setLeaves] = useState(() => { try { return JSON.parse(localStorage.getItem('shift_leaves') || '[]'); } catch { return []; } });
   const [swapRequests, setSwapRequests] = useState(() => { try { return JSON.parse(localStorage.getItem('shift_swaps') || '[]'); } catch { return []; } });
+  const [openShifts, setOpenShifts] = useState(() => { try { return JSON.parse(localStorage.getItem('shift_open_shifts') || '[]'); } catch { return []; } });
   const [departments, setDepartments] = useState(() => { try { return JSON.parse(localStorage.getItem('shift_departments') || '["Umum"]'); } catch { return ['Umum']; } });
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => localStorage.getItem('shift_notif') === 'true');
+  const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem('shift_gemini_key') || '');
   const [syncStatus, setSyncStatus] = useState('offline'); // 'synced' | 'syncing' | 'offline'
   const firebaseListenerRef = useRef(false); // prevent re-entrant updates
 
@@ -112,6 +117,7 @@ function App() {
         if (cloud.notes) { setNotes(cloud.notes); localStorage.setItem('shift_notes', JSON.stringify(cloud.notes)); }
         if (cloud.leaves) { setLeaves(cloud.leaves); localStorage.setItem('shift_leaves', JSON.stringify(cloud.leaves)); }
         if (cloud.swaps) { setSwapRequests(cloud.swaps); localStorage.setItem('shift_swaps', JSON.stringify(cloud.swaps)); }
+        if (cloud.openShifts) { setOpenShifts(cloud.openShifts); localStorage.setItem('shift_open_shifts', JSON.stringify(cloud.openShifts)); }
         if (cloud.departments) { setDepartments(cloud.departments); localStorage.setItem('shift_departments', JSON.stringify(cloud.departments)); }
         if (cloud.customHolidays) { setCustomHolidays(cloud.customHolidays); localStorage.setItem('shift_custom_holidays', JSON.stringify(cloud.customHolidays)); }
         if (cloud.settings) {
@@ -136,6 +142,7 @@ function App() {
         if (cloud.notes) { setNotes(cloud.notes); localStorage.setItem('shift_notes', JSON.stringify(cloud.notes)); }
         if (cloud.leaves) { setLeaves(cloud.leaves); localStorage.setItem('shift_leaves', JSON.stringify(cloud.leaves)); }
         if (cloud.swaps) { setSwapRequests(cloud.swaps); localStorage.setItem('shift_swaps', JSON.stringify(cloud.swaps)); }
+        if (cloud.openShifts) { setOpenShifts(cloud.openShifts); localStorage.setItem('shift_open_shifts', JSON.stringify(cloud.openShifts)); }
         if (cloud.departments) { setDepartments(cloud.departments); localStorage.setItem('shift_departments', JSON.stringify(cloud.departments)); }
         if (cloud.customHolidays) { setCustomHolidays(cloud.customHolidays); localStorage.setItem('shift_custom_holidays', JSON.stringify(cloud.customHolidays)); }
         if (cloud.settings) {
@@ -205,7 +212,7 @@ function App() {
     setSyncStatus('syncing');
     firebaseListenerRef.current = true;
     const allData = {
-      employees, shifts, logs: activityLogs, notes, leaves, swaps: swapRequests,
+      employees, shifts, logs: activityLogs, notes, leaves, swaps: swapRequests, openShifts,
       departments, customHolidays,
       settings: { cutOffDate, incentiveAmount, holidayIncentiveAmount, spIncentiveAmount, autoHolidayEnabled }
     };
@@ -379,6 +386,25 @@ function App() {
     }
   };
 
+  // Open Shifts (Bidding)
+  const addOpenShift = (openShift) => {
+    const updated = [...openShifts, openShift];
+    setOpenShifts(updated); localStorage.setItem('shift_open_shifts', JSON.stringify(updated));
+    apiSyncPath('openShifts', updated);
+    addLog(`Bursa shift dibuka: ${openShift.dateStr} (${openShift.shiftId})`);
+  };
+  const updateOpenShift = (openShift) => {
+    const updated = openShifts.map(s => s.id === openShift.id ? openShift : s);
+    setOpenShifts(updated); localStorage.setItem('shift_open_shifts', JSON.stringify(updated));
+    apiSyncPath('openShifts', updated);
+  };
+  const removeOpenShift = (id) => {
+    const updated = openShifts.filter(s => s.id !== id);
+    setOpenShifts(updated); localStorage.setItem('shift_open_shifts', JSON.stringify(updated));
+    apiSyncPath('openShifts', updated);
+  };
+
+
   // Theme & departments
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
   const updateDepartments = (deps) => { setDepartments(deps); localStorage.setItem('shift_departments', JSON.stringify(deps)); apiSyncPath('departments', deps); };
@@ -390,25 +416,37 @@ function App() {
   };
 
   const isViewer = sessionStorage.getItem('shift_role') === 'viewer';
+  const isEmployee = sessionStorage.getItem('shift_role') === 'employee';
+  const currentEmployeeId = sessionStorage.getItem('shift_employee_id');
+
+  const handleLogout = () => {
+    sessionStorage.setItem('shift_auth', 'false');
+    sessionStorage.removeItem('shift_role');
+    sessionStorage.removeItem('shift_employee_id');
+    window.location.href = window.location.pathname;
+  };
 
   return (
-    <LoginGate>
+    <LoginGate employees={employees}>
       <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} theme={theme} toggleTheme={toggleTheme} syncStatus={syncStatus} forceSync={forceSync} />
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} theme={theme} toggleTheme={toggleTheme} syncStatus={syncStatus} forceSync={forceSync} isViewer={isViewer} isEmployee={isEmployee} onLogout={handleLogout} />
         <main style={{ flex: 1, marginLeft: '17.5rem', overflowY: 'auto', position: 'relative', padding: '1.25rem' }}>
           <div className="orb orb-1" /><div className="orb orb-2" /><div className="orb orb-3" />
           <div key={activeTab} className="animate-fade-in-up" style={{ position: 'relative', zIndex: 1, height: '100%' }}>
-            {activeTab === 'dashboard' && <Dashboard employees={employees} shifts={shifts} activityLogs={activityLogs} leaves={leaves} swapRequests={swapRequests} />}
-            {activeTab === 'employees' && <EmployeeList employees={employees} onAdd={addEmployee} onEdit={editEmployee} onDelete={deleteEmployee} shifts={shifts} departments={departments} isViewer={isViewer} />}
-            {activeTab === 'calendar' && <CalendarView employees={employees} shifts={shifts} updateShift={updateShift} setBatchShifts={setBatchShifts} autoHolidayEnabled={autoHolidayEnabled} holidays={allHolidays} canUndo={canUndo} canRedo={canRedo} onUndo={handleUndo} onRedo={handleRedo} notes={notes} updateNote={updateNote} swapRequests={swapRequests} onAddSwapRequest={addSwapRequest} onResolveSwap={resolveSwap} isViewer={isViewer} />}
+            {activeTab === 'dashboard' && <Dashboard employees={employees} shifts={shifts} activityLogs={activityLogs} leaves={leaves} swapRequests={swapRequests} isEmployee={isEmployee} currentEmployeeId={currentEmployeeId} />}
+            {activeTab === 'employees' && <EmployeeList employees={employees} onAdd={addEmployee} onEdit={editEmployee} onDelete={deleteEmployee} shifts={shifts} departments={departments} isViewer={isViewer} isEmployee={isEmployee} currentEmployeeId={currentEmployeeId} />}
+            {activeTab === 'calendar' && <CalendarView employees={employees} shifts={shifts} updateShift={updateShift} setBatchShifts={setBatchShifts} autoHolidayEnabled={autoHolidayEnabled} holidays={allHolidays} canUndo={canUndo} canRedo={canRedo} onUndo={handleUndo} onRedo={handleRedo} notes={notes} updateNote={updateNote} swapRequests={swapRequests} onAddSwapRequest={addSwapRequest} onResolveSwap={resolveSwap} isViewer={isViewer} isEmployee={isEmployee} currentEmployeeId={currentEmployeeId} />}
+            {activeTab === 'bidding' && <ShiftBidding employees={employees} shifts={shifts} openShifts={openShifts} addOpenShift={addOpenShift} updateOpenShift={updateOpenShift} removeOpenShift={removeOpenShift} isEmployee={isEmployee} currentEmployeeId={currentEmployeeId} updateShift={updateShift} />}
+            {activeTab === 'payroll' && <Payroll employees={employees} shifts={shifts} cutOffDate={cutOffDate} incentiveAmount={incentiveAmount} holidayIncentiveAmount={holidayIncentiveAmount} spIncentiveAmount={spIncentiveAmount} holidays={allHolidays} />}
             {activeTab === 'reports' && <Reports employees={employees} shifts={shifts} cutOffDate={cutOffDate} incentiveAmount={incentiveAmount} holidayIncentiveAmount={holidayIncentiveAmount} spIncentiveAmount={spIncentiveAmount} holidays={allHolidays} />}
             {activeTab === 'analytics' && <AnalyticsView employees={employees} shifts={shifts} cutOffDate={cutOffDate} incentiveAmount={incentiveAmount} holidayIncentiveAmount={holidayIncentiveAmount} spIncentiveAmount={spIncentiveAmount} holidays={allHolidays} />}
             {activeTab === 'leave' && <LeaveManagement employees={employees} leaves={leaves} onAddLeave={addLeave} onUpdateLeave={updateLeave} shifts={shifts} setBatchShifts={setBatchShifts} />}
             {activeTab === 'audit' && <AuditLog logs={activityLogs} />}
-            {activeTab === 'settings' && <SettingsView autoHolidayEnabled={autoHolidayEnabled} toggleAutoHoliday={toggleAutoHoliday} cutOffDate={cutOffDate} incentiveAmount={incentiveAmount} holidayIncentiveAmount={holidayIncentiveAmount} spIncentiveAmount={spIncentiveAmount} updateSettings={updateSettings} allHolidays={allHolidays} onAddHoliday={addCustomHoliday} onDeleteHoliday={deleteCustomHoliday} theme={theme} toggleTheme={toggleTheme} departments={departments} updateDepartments={updateDepartments} notificationsEnabled={notificationsEnabled} toggleNotifications={toggleNotifications} shifts={shifts} syncStatus={syncStatus} forceSync={forceSync} />}
+            {activeTab === 'settings' && <SettingsView autoHolidayEnabled={autoHolidayEnabled} toggleAutoHoliday={toggleAutoHoliday} cutOffDate={cutOffDate} incentiveAmount={incentiveAmount} holidayIncentiveAmount={holidayIncentiveAmount} spIncentiveAmount={spIncentiveAmount} updateSettings={updateSettings} allHolidays={allHolidays} onAddHoliday={addCustomHoliday} onDeleteHoliday={deleteCustomHoliday} theme={theme} toggleTheme={toggleTheme} departments={departments} updateDepartments={updateDepartments} notificationsEnabled={notificationsEnabled} toggleNotifications={toggleNotifications} shifts={shifts} syncStatus={syncStatus} forceSync={forceSync} geminiApiKey={geminiApiKey} setGeminiApiKey={setGeminiApiKey} />}
           </div>
         </main>
       </div>
+      <AIChatbot context={{ employees, shifts, leaves, swapRequests, openShifts, geminiApiKey }} />
     </LoginGate>
   );
 }

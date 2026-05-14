@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <!-- Main gradient: deep indigo to electric cyan -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4338CA"/>
+      <stop offset="50%" style="stop-color:#6366F1"/>
+      <stop offset="100%" style="stop-color:#22D3EE"/>
+    </linearGradient>
+
+    <!-- Glass shine overlay -->
+    <linearGradient id="shine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.25"/>
+      <stop offset="50%" style="stop-color:#ffffff;stop-opacity:0.05"/>
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"/>
+    </linearGradient>
+
+    <!-- Clock hand accent gradient -->
+    <linearGradient id="handGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F472B6"/>
+      <stop offset="100%" style="stop-color:#FBBF24"/>
+    </linearGradient>
+
+    <!-- Glow filter for the floating dots -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Subtle inner shadow -->
+    <filter id="innerShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8" result="blur"/>
+      <feOffset dx="0" dy="4"/>
+      <feComposite in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1"/>
+      <feFlood flood-color="#000000" flood-opacity="0.3"/>
+      <feComposite in2="SourceGraphic" operator="in"/>
+      <feMerge>
+        <feMergeNode in="SourceGraphic"/>
+        <feMergeNode/>
+      </feMerge>
+    </filter>
+
+    <!-- Clip for the rounded square -->
+    <clipPath id="roundClip">
+      <rect x="16" y="16" width="480" height="480" rx="110" ry="110"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background rounded super-ellipse -->
+  <rect x="16" y="16" width="480" height="480" rx="110" ry="110" fill="url(#bgGrad)"/>
+
+  <!-- Glass shine overlay -->
+  <rect x="16" y="16" width="480" height="240" rx="110" ry="110" fill="url(#shine)" clip-path="url(#roundClip)"/>
+
+  <!-- Subtle noise texture via tiny circles -->
+  <g clip-path="url(#roundClip)" opacity="0.03">
+    <circle cx="100" cy="100" r="2" fill="white"/>
+    <circle cx="200" cy="80" r="1.5" fill="white"/>
+    <circle cx="300" cy="120" r="2" fill="white"/>
+    <circle cx="400" cy="90" r="1" fill="white"/>
+    <circle cx="150" cy="250" r="1.5" fill="white"/>
+    <circle cx="350" cy="300" r="2" fill="white"/>
+    <circle cx="250" cy="400" r="1" fill="white"/>
+    <circle cx="420" cy="380" r="1.5" fill="white"/>
+  </g>
+
+  <!-- ============================================
+       MAIN ICON: Abstract Clock + Shift Arrows
+       ============================================ -->
+  <g transform="translate(256, 256)">
+
+    <!-- Outer ring (clock face) -->
+    <circle cx="0" cy="0" r="155" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="3"/>
+
+    <!-- Tick marks (12 positions, like a clock) -->
+    <g stroke="rgba(255,255,255,0.35)" stroke-width="3" stroke-linecap="round">
+      <!-- 12 -->
+      <line x1="0" y1="-140" x2="0" y2="-125"/>
+      <!-- 3 -->
+      <line x1="140" y1="0" x2="125" y2="0"/>
+      <!-- 6 -->
+      <line x1="0" y1="140" x2="0" y2="125"/>
+      <!-- 9 -->
+      <line x1="-140" y1="0" x2="-125" y2="0"/>
+    </g>
+
+    <!-- Small tick marks -->
+    <g stroke="rgba(255,255,255,0.15)" stroke-width="2" stroke-linecap="round">
+      <!-- 1 -->
+      <line x1="70" y1="-121" x2="62.5" y2="-108"/>
+      <!-- 2 -->
+      <line x1="121" y1="-70" x2="108" y2="-62.5"/>
+      <!-- 4 -->
+      <line x1="121" y1="70" x2="108" y2="62.5"/>
+      <!-- 5 -->
+      <line x1="70" y1="121" x2="62.5" y2="108"/>
+      <!-- 7 -->
+      <line x1="-70" y1="121" x2="-62.5" y2="108"/>
+      <!-- 8 -->
+      <line x1="-121" y1="70" x2="-108" y2="62.5"/>
+      <!-- 10 -->
+      <line x1="-121" y1="-70" x2="-108" y2="-62.5"/>
+      <!-- 11 -->
+      <line x1="-70" y1="-121" x2="-62.5" y2="-108"/>
+    </g>
+
+    <!-- Hour hand -->
+    <line x1="0" y1="10" x2="0" y2="-70" stroke="white" stroke-width="8" stroke-linecap="round" opacity="0.9"/>
+
+    <!-- Minute hand -->
+    <line x1="0" y1="10" x2="65" y2="-65" stroke="white" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
+
+    <!-- Center dot -->
+    <circle cx="0" cy="0" r="10" fill="white"/>
+    <circle cx="0" cy="0" r="5" fill="url(#bgGrad)"/>
+
+    <!-- ============================================
+         SHIFT ROTATION ARROWS (the "Sync" element)
+         Two curved arrows circling the clock
+         ============================================ -->
+
+    <!-- Top-right arrow arc -->
+    <path d="M 60,-145 A 160,160 0 0,1 145,-60" fill="none" stroke="url(#handGrad)" stroke-width="6" stroke-linecap="round" filter="url(#glow)"/>
+    <!-- Arrowhead -->
+    <polygon points="145,-60 130,-78 155,-72" fill="url(#handGrad)" filter="url(#glow)"/>
+
+    <!-- Bottom-left arrow arc -->
+    <path d="M -60,145 A 160,160 0 0,1 -145,60" fill="none" stroke="url(#handGrad)" stroke-width="6" stroke-linecap="round" filter="url(#glow)"/>
+    <!-- Arrowhead -->
+    <polygon points="-145,60 -130,78 -155,72" fill="url(#handGrad)" filter="url(#glow)"/>
+
+    <!-- Glowing shift indicator dots (representing 3 shifts: Pagi, Sore, Malam) -->
+    <!-- Pagi (Morning) - Blue -->
+    <circle cx="-100" cy="-110" r="8" fill="#60A5FA" filter="url(#glow)" opacity="0.9"/>
+    <!-- Sore (Afternoon) - Yellow -->
+    <circle cx="120" cy="30" r="8" fill="#FBBF24" filter="url(#glow)" opacity="0.9"/>
+    <!-- Malam (Night) - Purple -->
+    <circle cx="-30" cy="130" r="8" fill="#A78BFA" filter="url(#glow)" opacity="0.9"/>
+
+  </g>
+
+  <!-- Subtle border ring -->
+  <rect x="16" y="16" width="480" height="480" rx="110" ry="110" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+</svg>

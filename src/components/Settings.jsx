@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Zap, Calendar, DollarSign, Save, Check, Database, Upload, Download, Trash2, Sun, Moon, Globe, Bell, Lock, Shield, Clock, Plus, X, RotateCcw, Keyboard, Building2, History, Cloud, CloudOff, RefreshCw } from 'lucide-react';
+import { Settings as SettingsIcon, Zap, Calendar, DollarSign, Save, Check, Database, Upload, Download, Trash2, Sun, Moon, Globe, Bell, Lock, Shield, Clock, Plus, X, RotateCcw, Keyboard, Building2, History, Cloud, CloudOff, RefreshCw, Bot } from 'lucide-react';
 import { getVersions, restoreVersion, deleteVersion, saveVersion } from '../utils/versionHistory';
 import { keyboardShortcuts } from '../utils/dummyData';
 import { sounds } from '../utils/soundService';
+import { useTranslation } from '../utils/i18n.jsx';
 
-const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incentiveAmount, holidayIncentiveAmount, spIncentiveAmount, updateSettings, allHolidays, onAddHoliday, onDeleteHoliday, theme, toggleTheme, departments, updateDepartments, notificationsEnabled, toggleNotifications, shifts, syncStatus, forceSync }) => {
+const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incentiveAmount, holidayIncentiveAmount, spIncentiveAmount, updateSettings, allHolidays, onAddHoliday, onDeleteHoliday, theme, toggleTheme, departments, updateDepartments, notificationsEnabled, toggleNotifications, shifts, syncStatus, forceSync, geminiApiKey, setGeminiApiKey }) => {
+  const { t, lang } = useTranslation();
   const [localCutOff, setLocalCutOff] = useState(cutOffDate);
   const [localIncentive, setLocalIncentive] = useState(incentiveAmount);
   const [localHolidayIncentive, setLocalHolidayIncentive] = useState(holidayIncentiveAmount);
@@ -93,10 +95,10 @@ const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incen
     <div style={{ padding: '0.5rem' }}>
       <div className="page-header animate-fade-in-up">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
-          <div style={{ width: '8px', height: '32px', borderRadius: '4px', background: 'linear-gradient(180deg, var(--color-secondary), var(--color-primary))' }} />
-          <h2 className="page-title">Pengaturan</h2>
+          <div style={{ width: '8px', height: '32px', borderRadius: '4px', background: 'linear-gradient(180deg, var(--color-primary), var(--color-secondary))', boxShadow: '0 0 12px rgba(129,140,248,0.2)' }} />
+          <h2 className="page-title">{t('set.title')}</h2>
         </div>
-        <p className="page-subtitle" style={{ marginLeft: '1.75rem' }}>Sesuaikan konfigurasi aplikasi ShiftSync Anda.</p>
+        <p className="page-subtitle" style={{ marginLeft: '1.75rem' }}>{t('set.subtitle')}</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
@@ -120,24 +122,58 @@ const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incen
         </div>
 
         {/* Incentive Settings */}
-        <div className="glass-card animate-fade-in-up delay-200" style={sectionStyle}>
-          {sectionTitle(<DollarSign size={18} style={{ color: '#34D399' }} />, 'Pengaturan Insentif', '#34D399')}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-            <div><label className="label">Tanggal Cut-Off Bulanan</label><input type="number" className="input" min={1} max={31} value={localCutOff} onChange={e => setLocalCutOff(+e.target.value)} /></div>
-            <div><label className="label">Insentif Shift Sore & Malam</label><input type="number" className="input" value={localIncentive} onChange={e => setLocalIncentive(+e.target.value)} /></div>
-            <div><label className="label">Insentif Hari Libur Nasional</label><input type="number" className="input" value={localHolidayIncentive} onChange={e => setLocalHolidayIncentive(+e.target.value)} /></div>
-            <div><label className="label">Insentif Shift Pengganti (SP)</label><input type="number" className="input" value={localSpIncentive} onChange={e => setLocalSpIncentive(+e.target.value)} /></div>
-            <button onClick={handleSave} className={`btn ${saved ? 'btn-success' : 'btn-primary'}`}>{saved ? <><Check size={15} /> Tersimpan!</> : <><Save size={15} /> Simpan</>}</button>
+        <div className="glass-card animate-fade-in-up delay-200" style={{ padding: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--glass-border)' }}>
+            <div style={{ padding: '0.65rem', borderRadius: 'var(--radius-lg)', background: 'var(--color-accent-glow)', color: 'var(--color-accent)' }}><DollarSign size={20} /></div>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>{t('set.incentive')}</h3>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
+            <div>
+              <label className="label">{t('set.cutoff')}</label>
+              <div style={{ position: 'relative' }}>
+                <Calendar size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                <input type="number" min="1" max="31" className="input" value={localCutOff} onChange={(e) => setLocalCutOff(parseInt(e.target.value) || 1)} style={{ paddingLeft: '2.75rem' }} />
+              </div>
+            </div>
+            <div>
+              <label className="label">{t('set.shiftIncentive')}</label>
+              <div style={{ position: 'relative' }}>
+                <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontWeight: '600', fontSize: '0.9rem' }}>Rp</span>
+                <input type="number" step="5000" className="input" value={localIncentive} onChange={(e) => setLocalIncentive(parseInt(e.target.value) || 0)} style={{ paddingLeft: '2.5rem' }} />
+              </div>
+            </div>
+            <div>
+              <label className="label">{t('set.holidayIncentive')}</label>
+              <div style={{ position: 'relative' }}>
+                <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontWeight: '600', fontSize: '0.9rem' }}>Rp</span>
+                <input type="number" step="5000" className="input" value={localHolidayIncentive} onChange={(e) => setLocalHolidayIncentive(parseInt(e.target.value) || 0)} style={{ paddingLeft: '2.5rem' }} />
+              </div>
+            </div>
+            <div>
+              <label className="label">{t('set.spIncentive')}</label>
+              <div style={{ position: 'relative' }}>
+                <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontWeight: '600', fontSize: '0.9rem' }}>Rp</span>
+                <input type="number" step="5000" className="input" value={localSpIncentive} onChange={(e) => setLocalSpIncentive(parseInt(e.target.value) || 0)} style={{ paddingLeft: '2.5rem' }} />
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--glass-border)' }}>
+            <button onClick={handleSave} className="btn btn-primary" style={{ minWidth: '180px' }}>
+              {saved ? <><Check size={18} /> {t('set.saved')}</> : <><Save size={18} /> {t('set.save')}</>}
+            </button>
           </div>
         </div>
 
         {/* Automation */}
-        <div className="glass-card animate-fade-in-up delay-300" style={sectionStyle}>
-          {sectionTitle(<Zap size={18} style={{ color: '#818CF8' }} />, 'Otomatisasi', '#818CF8')}
+        <div className="glass-card animate-fade-in-up delay-100" style={{ padding: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--glass-border)' }}>
+            <div style={{ padding: '0.65rem', borderRadius: 'var(--radius-lg)', background: 'var(--color-primary-light)', color: 'var(--color-primary)' }}><Zap size={20} /></div>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>{t('set.automation')}</h3>
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <div>
-              <p style={{ fontSize: '0.88rem', fontWeight: '600' }}>Auto-Libur Nasional</p>
-              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Otomatis set libur pada hari libur nasional</p>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontWeight: '600', marginBottom: '0.2rem' }}>{t('set.autoHoliday')}</p>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{lang === 'en' ? 'Automatically set employees to Off on red dates.' : 'Otomatis set karyawan menjadi Libur pada tanggal merah.'}</p>
             </div>
             {toggleBtn(autoHolidayEnabled, toggleAutoHoliday, autoHolidayEnabled ? 'Aktif ✓' : 'Nonaktif')}
           </div>
@@ -166,6 +202,18 @@ const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incen
               <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Wajib PIN saat membuka aplikasi</p>
             </div>
             {toggleBtn(loginEnabled, handleLoginToggle, loginEnabled ? 'Aktif ✓' : 'Nonaktif')}
+          </div>
+        </div>
+
+        {/* AI Integration */}
+        <div className="glass-card animate-fade-in-up delay-400" style={sectionStyle}>
+          {sectionTitle(<Bot size={18} style={{ color: '#10B981' }} />, 'Asisten AI (Gemini)', '#10B981')}
+          <div style={{ marginBottom: '1rem' }}>
+            <label className="label">Gemini API Key</label>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <input type="password" className="input" placeholder="AIzaSy..." value={geminiApiKey || ''} onChange={e => { setGeminiApiKey(e.target.value); localStorage.setItem('shift_gemini_key', e.target.value); }} style={{ flex: 1 }} />
+            </div>
+            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Kunci API diperlukan untuk mengaktifkan AI cerdas terintegrasi. Tersimpan secara lokal.</p>
           </div>
         </div>
 
@@ -234,9 +282,22 @@ const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incen
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
         <div className="glass-card animate-fade-in-up delay-400" style={sectionStyle}>
           {sectionTitle(<Database size={18} style={{ color: '#34D399' }} />, 'Backup & Restore', '#34D399')}
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <button onClick={handleExport} className="btn btn-success" style={{ flex: 1 }}><Download size={15} /> Ekspor Data</button>
-            <label className="btn btn-outline" style={{ flex: 1, cursor: 'pointer' }}><Upload size={15} /> Restore Data<input type="file" accept=".json" onChange={handleRestore} style={{ display: 'none' }} /></label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <button onClick={handleExport} className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '1rem' }}>
+              <Download size={18} style={{ color: 'var(--color-primary)' }} />
+              <div style={{ textAlign: 'left' }}>
+                <p style={{ fontWeight: '600' }}>{t('set.exportData')}</p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{lang === 'en' ? 'Download all data as JSON file' : 'Unduh seluruh data sebagai file JSON'}</p>
+              </div>
+            </button>
+            <label className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '1rem', cursor: 'pointer' }}>
+              <Upload size={18} style={{ color: 'var(--success)' }} />
+              <div style={{ textAlign: 'left' }}>
+                <p style={{ fontWeight: '600' }}>{t('set.restoreData')}</p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{lang === 'en' ? 'Upload JSON file to restore' : 'Unggah file JSON untuk memulihkan'}</p>
+              </div>
+              <input type="file" accept=".json" onChange={handleRestore} style={{ display: 'none' }} />
+            </label>
           </div>
         </div>
 

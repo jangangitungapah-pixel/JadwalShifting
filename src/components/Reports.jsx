@@ -3,8 +3,10 @@ import { FileText, Download, Printer, FileDown, Calendar, DollarSign, Users, Tre
 import { allShiftTypes, longShiftTypes, shiftTypes } from '../utils/dummyData';
 import * as XLSX from 'xlsx';
 import { sounds } from '../utils/soundService';
+import { useTranslation } from '../utils/i18n.jsx';
 
 const Reports = ({ employees, shifts, cutOffDate, incentiveAmount, holidayIncentiveAmount, spIncentiveAmount, holidays }) => {
+  const { t, lang } = useTranslation();
   const today = new Date();
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
   const [selectedYear, setSelectedYear] = useState(today.getFullYear());
@@ -14,7 +16,7 @@ const Reports = ({ employees, shifts, cutOffDate, incentiveAmount, holidayIncent
   const [selectedEmpDetails, setSelectedEmpDetails] = useState(null);
   const reportRef = useRef(null);
 
-  const monthNames = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+  const monthNames = t('time.months');
 
   const calculateIncentive = (year, month) => {
     let start, end;
@@ -177,9 +179,9 @@ const Reports = ({ employees, shifts, cutOffDate, incentiveAmount, holidayIncent
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
             <div style={{ width: '8px', height: '32px', borderRadius: '4px', background: 'linear-gradient(180deg, #34D399, var(--color-primary))' }} />
-            <h2 className="page-title">Laporan Insentif</h2>
+            <h2 className="page-title">{t('rep.title')}</h2>
           </div>
-          <p className="page-subtitle" style={{ marginLeft: '1.75rem' }}>Laporan dan perhitungan insentif karyawan.</p>
+          <p className="page-subtitle" style={{ marginLeft: '1.75rem' }}>{t('rep.subtitle')}</p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <select className="input" value={selectedMonth} onChange={e => setSelectedMonth(+e.target.value)} style={{ width: 'auto', colorScheme: 'dark', fontSize: '0.82rem' }}>
@@ -199,9 +201,9 @@ const Reports = ({ employees, shifts, cutOffDate, incentiveAmount, holidayIncent
       {/* Summary Cards */}
       <div className="animate-fade-in-up delay-100" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.85rem', marginBottom: '1.25rem' }}>
         {[
-          { label: 'Total Karyawan', value: employees.length, icon: Users, color: '#818CF8' },
-          { label: 'Shift Insentif', value: fmt(totalShiftIncentive), icon: DollarSign, color: '#34D399' },
-          { label: 'Long Shift (SP)', value: fmt(totalSP), icon: TrendingUp, color: '#F472B6' },
+          { label: t('dash.totalEmployees'), value: employees.length, icon: Users, color: '#818CF8' },
+          { label: lang === 'en' ? 'Shift Incentive' : 'Shift Insentif', value: fmt(totalShiftIncentive), icon: DollarSign, color: '#34D399' },
+          { label: t('dash.longShiftMonth').split(' ')[0] + ' (SP)', value: fmt(totalSP), icon: TrendingUp, color: '#F472B6' },
           { label: 'Grand Total', value: fmt(totalIncentive), icon: FileText, color: '#FBBF24' },
         ].map((c, i) => (
           <div key={i} className="glass-card" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -220,7 +222,7 @@ const Reports = ({ employees, shifts, cutOffDate, incentiveAmount, holidayIncent
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: 'var(--bg-elevated)' }}>
-                {['No', 'Nama', 'Jabatan', 'Sore', 'Malam', 'Libur', 'SP', 'Insentif Shift', 'Insentif Libur', 'Insentif SP', 'Total'].map((h, i) => (
+                {['No', lang === 'en' ? 'Name' : 'Nama', lang === 'en' ? 'Role' : 'Jabatan', lang === 'en' ? 'Eve' : 'Sore', lang === 'en' ? 'Night' : 'Malam', lang === 'en' ? 'Hol' : 'Libur', 'SP', lang === 'en' ? 'Shift Inc' : 'Insentif Shift', lang === 'en' ? 'Hol Inc' : 'Insentif Libur', lang === 'en' ? 'SP Inc' : 'Insentif SP', 'Total'].map((h, i) => (
                   <th key={i} style={{ padding: '0.85rem 0.75rem', textAlign: i > 2 ? 'center' : 'left', fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--glass-border)', whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
               </tr>
@@ -262,14 +264,14 @@ const Reports = ({ employees, shifts, cutOffDate, incentiveAmount, holidayIncent
       {/* Multi-month comparison */}
       {multiMonth && reportData.length > 1 && (
         <div className="glass-card animate-fade-in-up" style={{ padding: '1.25rem', marginTop: '1.25rem' }}>
-          <h3 style={{ fontSize: '0.95rem', fontWeight: '700', marginBottom: '1rem' }}>📊 Perbandingan Multi-Bulan</h3>
+          <h3 style={{ fontSize: '0.95rem', fontWeight: '700', marginBottom: '1rem' }}>📊 {lang === 'en' ? 'Multi-Month Comparison' : 'Perbandingan Multi-Bulan'}</h3>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: 'var(--bg-elevated)' }}>
-                  <th style={{ padding: '0.65rem', textAlign: 'left', fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-muted)', borderBottom: '1px solid var(--glass-border)' }}>Bulan</th>
-                  <th style={{ padding: '0.65rem', textAlign: 'center', fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-muted)', borderBottom: '1px solid var(--glass-border)' }}>Total Insentif</th>
-                  <th style={{ padding: '0.65rem', textAlign: 'center', fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-muted)', borderBottom: '1px solid var(--glass-border)' }}>Rata-rata/Karyawan</th>
+                  <th style={{ padding: '0.65rem', textAlign: 'left', fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-muted)', borderBottom: '1px solid var(--glass-border)' }}>{lang === 'en' ? 'Month' : 'Bulan'}</th>
+                  <th style={{ padding: '0.65rem', textAlign: 'center', fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-muted)', borderBottom: '1px solid var(--glass-border)' }}>{lang === 'en' ? 'Total Incentive' : 'Total Insentif'}</th>
+                  <th style={{ padding: '0.65rem', textAlign: 'center', fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-muted)', borderBottom: '1px solid var(--glass-border)' }}>{lang === 'en' ? 'Avg/Employee' : 'Rata-rata/Karyawan'}</th>
                 </tr>
               </thead>
               <tbody>

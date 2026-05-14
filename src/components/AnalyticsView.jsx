@@ -2,14 +2,16 @@ import React, { useState, useMemo } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import { TrendingUp, BarChart3, PieChart as PieIcon, Users, Clock, Shield, Zap } from 'lucide-react';
 import { calculateFairnessScore, calculateWorkloadBalance, calculateOvertime } from '../utils/fairness';
+import { useTranslation } from '../utils/i18n.jsx';
 
 const COLORS = ['#60A5FA', '#FBBF24', '#A78BFA', '#F87171', '#2DD4BF', '#F472B6', '#34D399', '#818CF8'];
 
 const AnalyticsView = ({ employees, shifts, cutOffDate, incentiveAmount, holidayIncentiveAmount, spIncentiveAmount, holidays }) => {
+  const { t, lang } = useTranslation();
   const today = new Date();
   const [selectedYear, setSelectedYear] = useState(today.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
-  const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+  const monthNames = t('time.months').map(m => m.substring(0, 3));
 
   const getDateRange = (year, month, cutOff) => {
     let start, end;
@@ -76,14 +78,14 @@ const AnalyticsView = ({ employees, shifts, cutOffDate, incentiveAmount, holiday
       <div className="page-header animate-fade-in-up">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
           <div style={{ width: '8px', height: '32px', borderRadius: '4px', background: 'linear-gradient(180deg, #818CF8, #22D3EE)', boxShadow: '0 0 12px rgba(129,140,248,0.2)' }} />
-          <h2 className="page-title">Analitik & Statistik</h2>
+          <h2 className="page-title">{t('stat.title')}</h2>
         </div>
-        <p className="page-subtitle" style={{ marginLeft: '1.75rem' }}>Wawasan mendalam tentang pola kerja dan kinerja tim.</p>
+        <p className="page-subtitle" style={{ marginLeft: '1.75rem' }}>{t('stat.subtitle')}</p>
       </div>
 
       {/* Month selector */}
       <div className="animate-fade-in-up delay-100" style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600' }}>BULAN:</span>
+        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600' }}>{lang === 'en' ? 'MONTH:' : 'BULAN:'}</span>
         {monthNames.map((m, i) => (
           <button key={i} onClick={() => setSelectedMonth(i)} style={{ padding: '0.25rem 0.6rem', fontSize: '0.72rem', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: i === selectedMonth ? '700' : '500', border: `1px solid ${i === selectedMonth ? 'var(--color-primary)' : 'var(--glass-border)'}`, background: i === selectedMonth ? 'var(--color-primary-light)' : 'transparent', color: i === selectedMonth ? 'var(--color-primary)' : 'var(--text-tertiary)', transition: 'all 0.2s' }}>{m}</button>
         ))}
@@ -94,7 +96,7 @@ const AnalyticsView = ({ employees, shifts, cutOffDate, incentiveAmount, holiday
         <div className="glass-card animate-fade-in-up delay-100" style={cardStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
             <PieIcon size={16} style={{ color: 'var(--color-primary)' }} />
-            <h3 style={{ fontSize: '0.95rem', fontWeight: '700' }}>Distribusi Shift</h3>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: '700' }}>{t('dash.shiftDistribution')}</h3>
           </div>
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
@@ -110,7 +112,7 @@ const AnalyticsView = ({ employees, shifts, cutOffDate, incentiveAmount, holiday
         <div className="glass-card animate-fade-in-up delay-200" style={cardStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
             <TrendingUp size={16} style={{ color: '#34D399' }} />
-            <h3 style={{ fontSize: '0.95rem', fontWeight: '700' }}>Tren Shift (6 Bulan)</h3>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: '700' }}>{lang === 'en' ? 'Shift Trend (6 Months)' : 'Tren Shift (6 Bulan)'}</h3>
           </div>
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={monthlyTrend}>
@@ -132,7 +134,7 @@ const AnalyticsView = ({ employees, shifts, cutOffDate, incentiveAmount, holiday
         <div className="glass-card animate-fade-in-up delay-300" style={cardStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
             <BarChart3 size={16} style={{ color: '#FBBF24' }} />
-            <h3 style={{ fontSize: '0.95rem', fontWeight: '700' }}>Beban Kerja (Jam)</h3>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: '700' }}>{lang === 'en' ? 'Workload (Hours)' : 'Beban Kerja (Jam)'}</h3>
           </div>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={workloadChart}>
@@ -152,7 +154,7 @@ const AnalyticsView = ({ employees, shifts, cutOffDate, incentiveAmount, holiday
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Zap size={16} style={{ color: '#2DD4BF' }} />
-              <h3 style={{ fontSize: '0.95rem', fontWeight: '700' }}>Skor Keadilan</h3>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: '700' }}>{t('dash.fairnessScore')}</h3>
             </div>
             <span style={{ fontSize: '1.5rem', fontWeight: '900', background: 'linear-gradient(135deg, #2DD4BF, #34D399)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{fairness.overallScore}%</span>
           </div>
@@ -173,7 +175,7 @@ const AnalyticsView = ({ employees, shifts, cutOffDate, incentiveAmount, holiday
       <div className="glass-card animate-fade-in-up delay-500" style={{ ...cardStyle, marginBottom: '1.25rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
           <Clock size={16} style={{ color: '#F87171' }} />
-          <h3 style={{ fontSize: '0.95rem', fontWeight: '700' }}>Peringatan Overtime (&gt;40 jam/minggu)</h3>
+          <h3 style={{ fontSize: '0.95rem', fontWeight: '700' }}>{lang === 'en' ? 'Overtime Alert (>40 hours/week)' : 'Peringatan Overtime (>40 jam/minggu)'}</h3>
         </div>
         {overtime.filter(o => o.hasOvertime).length === 0 ? (
           <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>✨ Tidak ada karyawan yang overtime bulan ini.</p>
@@ -193,7 +195,7 @@ const AnalyticsView = ({ employees, shifts, cutOffDate, incentiveAmount, holiday
       <div className="glass-card animate-fade-in-up delay-600" style={cardStyle}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
           <BarChart3 size={16} style={{ color: '#F472B6' }} />
-          <h3 style={{ fontSize: '0.95rem', fontWeight: '700' }}>Heatmap Kehadiran</h3>
+          <h3 style={{ fontSize: '0.95rem', fontWeight: '700' }}>{lang === 'en' ? 'Attendance Heatmap' : 'Heatmap Kehadiran'}</h3>
         </div>
         <div style={{ overflowX: 'auto' }}>
           <div style={{ display: 'grid', gridTemplateColumns: `100px repeat(${new Date(selectedYear, selectedMonth + 1, 0).getDate()}, 1fr)`, gap: '2px', minWidth: 'max-content' }}>

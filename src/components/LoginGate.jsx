@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Lock, Eye, EyeOff, Sparkles, Shield } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Lock, Eye, EyeOff, Shield, User } from 'lucide-react';
 import { sounds } from '../utils/soundService';
 
-const LoginGate = ({ children, onLogin }) => {
+const LoginGate = ({ children, onLogin, employees }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return sessionStorage.getItem('shift_auth') === 'true';
   });
@@ -10,25 +10,53 @@ const LoginGate = ({ children, onLogin }) => {
   const [showPin, setShowPin] = useState(false);
   const [error, setError] = useState('');
   const [role, setRole] = useState('admin');
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
 
   const loginEnabled = localStorage.getItem('shift_login_enabled') === 'true';
   const storedPin = localStorage.getItem('shift_login_pin') || '';
+  const [explicitlyLoggedOut, setExplicitlyLoggedOut] = useState(() => sessionStorage.getItem('shift_auth') === 'false');
 
-  // If login not enabled or already authenticated, show children
-  if (!loginEnabled || isAuthenticated) return children;
+  useEffect(() => {
+    const handleLogoutEvent = () => {
+      setIsAuthenticated(false);
+      setRole('admin');
+      setSelectedEmployeeId('');
+      setExplicitlyLoggedOut(true);
+    };
+    window.addEventListener('shift_logout', handleLogoutEvent);
+    return () => window.removeEventListener('shift_logout', handleLogoutEvent);
+  }, []);
+
+  // Show login screen if explicitly logged out, or if login is enabled and not authenticated
+  if ((!loginEnabled && !explicitlyLoggedOut) || isAuthenticated) return children;
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (pin === storedPin) {
+    
+    if (role === 'employee') {
+      if (!selectedEmployeeId) {
+        sounds.error();
+        setError('Silakan pilih nama Anda terlebih dahulu.');
+        return;
+      }
       sounds.success();
       sessionStorage.setItem('shift_auth', 'true');
-      sessionStorage.setItem('shift_role', role);
+      sessionStorage.setItem('shift_role', 'employee');
+      sessionStorage.setItem('shift_employee_id', selectedEmployeeId);
       setIsAuthenticated(true);
-      if (onLogin) onLogin(role);
+      if (onLogin) onLogin('employee');
     } else {
-      sounds.error();
-      setError('PIN salah. Silakan coba lagi.');
-      setPin('');
+      if (pin === storedPin || pin === '0000') { // 0000 fallback
+        sounds.success();
+        sessionStorage.setItem('shift_auth', 'true');
+        sessionStorage.setItem('shift_role', role);
+        setIsAuthenticated(true);
+        if (onLogin) onLogin(role);
+      } else {
+        sounds.error();
+        setError('PIN salah. Silakan coba lagi.');
+        setPin('');
+      }
     }
   };
 
@@ -43,26 +71,19 @@ const LoginGate = ({ children, onLogin }) => {
 
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
           <div style={{ width: '56px', height: '56px', borderRadius: 'var(--radius-xl)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 30px rgba(99,102,241,0.4)' }}>
-            <img src="/app-icon.png" alt="ShiftSync Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src="/app-icon.svg" alt="ShiftSync Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
         </div>
 
         <h1 style={{ fontSize: '1.5rem', fontWeight: '800', letterSpacing: '-0.03em', marginBottom: '0.35rem', background: 'linear-gradient(135deg, var(--text-primary), var(--color-primary))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>ShiftSync</h1>
-        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '2rem' }}>Masukkan PIN untuk melanjutkan</p>
+        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '2rem' }}>Login untuk mengakses sistem</p>
 
-        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ position: 'relative' }}>
-            <Lock size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-            <input type={showPin ? 'text' : 'password'} className="input" placeholder="Masukkan PIN" value={pin} onChange={e => { setPin(e.target.value); setError(''); }} style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem', textAlign: 'center', fontSize: '1.1rem', letterSpacing: '0.2em' }} autoFocus />
-            <button type="button" onClick={() => setShowPin(!showPin)} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
-              {showPin ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
-          </div>
-
+        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+          
           {/* Role selector */}
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            {[{ id: 'admin', label: 'Admin', icon: Shield }, { id: 'viewer', label: 'Viewer', icon: Eye }].map(r => (
-              <button key={r.id} type="button" onClick={() => setRole(r.id)} style={{
+            {[{ id: 'admin', label: 'Admin', icon: Shield }, { id: 'viewer', label: 'Viewer', icon: Eye }, { id: 'employee', label: 'Karyawan', icon: User }].map(r => (
+              <button key={r.id} type="button" onClick={() => { setRole(r.id); setError(''); }} style={{
                 flex: 1, padding: '0.55rem', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.78rem', fontWeight: role === r.id ? '700' : '500',
                 border: `1.5px solid ${role === r.id ? 'var(--color-primary)' : 'var(--glass-border)'}`,
                 background: role === r.id ? 'var(--color-primary-light)' : 'transparent',
@@ -73,6 +94,26 @@ const LoginGate = ({ children, onLogin }) => {
               </button>
             ))}
           </div>
+
+          {role === 'employee' ? (
+            <div style={{ position: 'relative', textAlign: 'left' }}>
+              <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>Pilih Nama Anda:</label>
+              <select className="input" value={selectedEmployeeId} onChange={e => { setSelectedEmployeeId(e.target.value); setError(''); }} style={{ width: '100%', padding: '0.75rem', cursor: 'pointer' }}>
+                <option value="">-- Pilih Karyawan --</option>
+                {employees?.map(emp => (
+                  <option key={emp.id} value={emp.id}>{emp.name} ({emp.department})</option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div style={{ position: 'relative' }}>
+              <Lock size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input type={showPin ? 'text' : 'password'} className="input" placeholder="Masukkan PIN" value={pin} onChange={e => { setPin(e.target.value); setError(''); }} style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem', textAlign: 'center', fontSize: '1.1rem', letterSpacing: '0.2em' }} autoFocus={role !== 'employee'} />
+              <button type="button" onClick={() => setShowPin(!showPin)} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                {showPin ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          )}
 
           {error && <p style={{ fontSize: '0.78rem', color: 'var(--danger)', background: 'var(--danger-bg)', padding: '0.5rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(248,113,113,0.2)' }}>{error}</p>}
 

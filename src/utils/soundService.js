@@ -75,4 +75,5 @@ export const sounds = {
   },
   modalOpen: () => playTone(400, 'sine', 0.1, 0.02, 600, true),
   modalClose: () => playTone(600, 'sine', 0.1, 0.02, 400, true),
+  notification: () => playTone(500, 'sine', 0.1, 0.02, 700, true),
 };

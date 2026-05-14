@@ -9,8 +9,10 @@ import { shiftTypes, allShiftTypes, longShiftTypes } from '../utils/dummyData';
 import { generateSmartShifts, backfillShifts } from '../utils/generateShift';
 import * as XLSX from 'xlsx';
 import { sounds } from '../utils/soundService';
+import { useTranslation } from '../utils/i18n.jsx';
 
-const CalendarView = ({ employees, shifts, updateShift, setBatchShifts, autoHolidayEnabled, holidays, canUndo, canRedo, onUndo, onRedo, notes, updateNote, swapRequests, onAddSwapRequest, onResolveSwap, isViewer }) => {
+const CalendarView = ({ employees, shifts, updateShift, setBatchShifts, autoHolidayEnabled, holidays, canUndo, canRedo, onUndo, onRedo, notes, updateNote, swapRequests, onAddSwapRequest, onResolveSwap, isViewer, isEmployee, currentEmployeeId }) => {
+  const { t, lang } = useTranslation();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedCell, setSelectedCell] = useState(null);
@@ -25,7 +27,7 @@ const CalendarView = ({ employees, shifts, updateShift, setBatchShifts, autoHoli
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+  const monthNames = t('time.months');
 
   const getDatesToRender = () => {
     const dates = [];
@@ -80,7 +82,7 @@ const CalendarView = ({ employees, shifts, updateShift, setBatchShifts, autoHoli
   };
 
   const handleCellClick = (empId, dateStr, currentShiftId) => {
-    if (isViewer) return;
+    if (isViewer || isEmployee) return;
     sounds.modalOpen();
     setSelectedCell({ empId, dateStr, currentShiftId });
     setModalOpen(true);
@@ -138,6 +140,16 @@ const CalendarView = ({ employees, shifts, updateShift, setBatchShifts, autoHoli
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Jadwal Shift");
     XLSX.writeFile(wb, `Jadwal_Shift_${monthNames[month]}_${year}.xlsx`);
+  };
+
+  const handleExportICS = () => {
+    if (!currentEmployeeId) return;
+    const emp = employees.find(e => e.id === currentEmployeeId);
+    if (!emp) return;
+    sounds.success();
+    import('../utils/calendarExport').then(module => {
+      module.exportToICS(emp, shifts, month, year, daysInMonth);
+    });
   };
 
   // Import Excel
@@ -204,85 +216,81 @@ const CalendarView = ({ employees, shifts, updateShift, setBatchShifts, autoHoli
   const widths = getBaseWidths();
   const columns = `minmax(${widths.name}px, max-content) repeat(${datesToRender.length}, minmax(${widths.col}px, 1fr))`;
 
+  // Today highlight
+  const todayStr = (() => {
+    const t = new Date();
+    return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+  })();
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '0.5rem' }}>
-      {/* Header */}
-      <div className="animate-fade-in-up" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
-            <div style={{ width: '8px', height: '32px', borderRadius: '4px', background: 'linear-gradient(180deg, #FBBF24, var(--color-primary))', boxShadow: '0 0 12px rgba(251, 191, 36, 0.2)' }} />
-            <h2 className="page-title">Jadwal Shift</h2>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '0.5rem', gap: '0.75rem' }}>
+      {/* ═══ HEADER BAR ═══ */}
+      <div className="animate-fade-in-up" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ width: '4px', height: '36px', borderRadius: '4px', background: 'linear-gradient(180deg, var(--color-primary), var(--color-secondary))', boxShadow: '0 0 12px rgba(129,140,248,0.3)' }} />
+          <div>
+            <h2 className="page-title" style={{ marginBottom: '0.15rem' }}>{t('cal.title')}</h2>
+            <p className="page-subtitle">{t('cal.subtitle')}</p>
           </div>
-          <p className="page-subtitle" style={{ marginLeft: '1.75rem' }}>Atur dan pantau jadwal kerja karyawan.</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-          {/* Date nav */}
-          <div className="glass-card" style={{ display: 'flex', alignItems: 'center', padding: '0.25rem', borderRadius: 'var(--radius-lg)' }}>
-            <button onClick={handlePrev} style={{ padding: '0.5rem', borderRadius: 'var(--radius-md)', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}><ChevronLeft size={18} /></button>
-            <span style={{ fontSize: '0.95rem', fontWeight: '700', minWidth: '160px', textAlign: 'center', letterSpacing: '-0.02em' }}>{getHeaderLabel()}</span>
-            <button onClick={handleNext} style={{ padding: '0.5rem', borderRadius: 'var(--radius-md)', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}><ChevronRight size={18} /></button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+          {/* Date Navigation */}
+          <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-card)', borderRadius: 'var(--radius-full)', border: '1px solid var(--glass-border)', padding: '0.2rem 0.35rem' }}>
+            <button onClick={handlePrev} style={{ padding: '0.4rem', borderRadius: '50%', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', transition: 'color 0.2s' }}><ChevronLeft size={16} /></button>
+            <span style={{ fontSize: '0.85rem', fontWeight: '700', minWidth: '140px', textAlign: 'center', letterSpacing: '-0.02em', fontFamily: "'Outfit', sans-serif" }}>{getHeaderLabel()}</span>
+            <button onClick={handleNext} style={{ padding: '0.4rem', borderRadius: '50%', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', transition: 'color 0.2s' }}><ChevronRight size={16} /></button>
           </div>
-          <button onClick={onUndo} disabled={!canUndo} className="btn btn-outline" style={{ padding: '0.5rem', opacity: canUndo ? 1 : 0.3 }} title="Undo (Ctrl+Z)"><Undo2 size={15} /></button>
-          <button onClick={onRedo} disabled={!canRedo} className="btn btn-outline" style={{ padding: '0.5rem', opacity: canRedo ? 1 : 0.3 }} title="Redo (Ctrl+Y)"><Redo2 size={15} /></button>
-          {/* View Mode controls */}
-          <div style={{ display: 'flex', alignItems: 'center', padding: '0.25rem', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-full)', border: '1px solid var(--glass-border)' }}>
-            {[
-              { id: 'day', label: 'Hari' },
-              { id: 'week', label: 'Minggu' },
-              { id: 'month', label: 'Bulan' },
-              { id: 'year', label: 'Tahun' }
-            ].map((mode) => (
-              <button
-                key={mode.id}
-                onClick={() => setViewMode(mode.id)}
-                style={{
-                  padding: '0.35rem 0.85rem',
-                  borderRadius: 'var(--radius-full)',
-                  border: 'none',
-                  background: viewMode === mode.id ? 'var(--color-primary)' : 'transparent',
-                  color: viewMode === mode.id ? 'white' : 'var(--text-secondary)',
-                  fontSize: '0.75rem',
-                  fontWeight: viewMode === mode.id ? '700' : '500',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                  boxShadow: viewMode === mode.id ? '0 2px 8px rgba(99, 102, 241, 0.3)' : 'none',
-                }}
-              >
-                {mode.label}
-              </button>
+          {!isEmployee && (
+            <div style={{ display: 'flex', gap: '0.2rem' }}>
+              <button onClick={onUndo} disabled={!canUndo} className="btn btn-outline" style={{ padding: '0.4rem', opacity: canUndo ? 1 : 0.25, borderRadius: '50%' }} title="Undo"><Undo2 size={14} /></button>
+              <button onClick={onRedo} disabled={!canRedo} className="btn btn-outline" style={{ padding: '0.4rem', opacity: canRedo ? 1 : 0.25, borderRadius: '50%' }} title="Redo"><Redo2 size={14} /></button>
+            </div>
+          )}
+          {/* View Mode */}
+          <div style={{ display: 'flex', padding: '0.2rem', background: 'var(--bg-card)', borderRadius: 'var(--radius-full)', border: '1px solid var(--glass-border)' }}>
+            {[{ id: 'day', label: lang === 'en' ? 'Day' : 'Hari' },{ id: 'week', label: lang === 'en' ? 'Week' : 'Minggu' },{ id: 'month', label: lang === 'en' ? 'Month' : 'Bulan' },{ id: 'year', label: lang === 'en' ? 'Year' : 'Tahun' }].map((mode) => (
+              <button key={mode.id} onClick={() => setViewMode(mode.id)} style={{ padding: '0.3rem 0.7rem', borderRadius: 'var(--radius-full)', border: 'none', background: viewMode === mode.id ? 'linear-gradient(135deg, var(--color-primary-deep), var(--color-primary))' : 'transparent', color: viewMode === mode.id ? 'white' : 'var(--text-muted)', fontSize: '0.7rem', fontWeight: viewMode === mode.id ? '700' : '500', cursor: 'pointer', transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)', boxShadow: viewMode === mode.id ? '0 2px 10px rgba(99,102,241,0.35)' : 'none', fontFamily: 'inherit' }}>{mode.label}</button>
             ))}
           </div>
           {/* Actions */}
-          <button onClick={() => { setAutoGenSingleEmp(null); sounds.modalOpen(); setAutoGenModalOpen(true); }} className="btn btn-outline" style={{ color: 'var(--color-primary)', borderColor: 'rgba(129,140,248,0.2)' }}><Wand2 size={15} /> Auto</button>
-          <button onClick={() => { sounds.modalOpen(); setBackfillModalOpen(true); }} className="btn btn-outline" style={{ color: 'var(--color-accent)', borderColor: 'rgba(236,72,153,0.2)' }}><Rewind size={15} /> Backfill</button>
-          <button onClick={() => { sounds.modalOpen(); setTemplateModalOpen(true); }} className="btn btn-outline" style={{ color: 'var(--color-secondary)', borderColor: 'rgba(34,211,238,0.2)' }}><Bookmark size={15} /></button>
-          <button onClick={() => { sounds.modalOpen(); setSwapModalOpen(true); }} className="btn btn-outline" style={{ color: '#FBBF24', borderColor: 'rgba(251,191,36,0.2)' }}><ArrowLeftRight size={15} /></button>
-          <button onClick={() => { sounds.success(); handleShareWA(); }} className="btn btn-outline" style={{ color: '#34D399', borderColor: 'rgba(52,211,153,0.2)' }}><MessageCircle size={15} /></button>
-          <label className="btn btn-outline" style={{ cursor: 'pointer', color: 'var(--info)', borderColor: 'rgba(96,165,250,0.2)' }}><Upload size={15} /><input type="file" accept=".xlsx,.xls" onChange={handleImport} style={{ display: 'none' }} /></label>
-          <button onClick={() => { sounds.success(); handleExport(); }} className="btn btn-success"><Download size={15} /> Excel</button>
+          {!isEmployee && (
+            <div style={{ display: 'flex', gap: '0.25rem', padding: '0.2rem', background: 'var(--bg-card)', borderRadius: 'var(--radius-full)', border: '1px solid var(--glass-border)' }}>
+              <button onClick={() => { setAutoGenSingleEmp(null); sounds.modalOpen(); setAutoGenModalOpen(true); }} style={{ padding: '0.35rem 0.65rem', borderRadius: 'var(--radius-full)', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-primary)', fontSize: '0.7rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.25rem', transition: 'all 0.2s', fontFamily: 'inherit' }}><Wand2 size={12} /> {t('cal.autoGen').split('-')[0]}</button>
+              <button onClick={() => { sounds.modalOpen(); setBackfillModalOpen(true); }} style={{ padding: '0.35rem 0.65rem', borderRadius: 'var(--radius-full)', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-accent)', fontSize: '0.7rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.25rem', transition: 'all 0.2s', fontFamily: 'inherit' }}><Rewind size={12} /> {t('cal.backfill')}</button>
+              <button onClick={() => { sounds.modalOpen(); setTemplateModalOpen(true); }} style={{ padding: '0.35rem', borderRadius: '50%', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-secondary)', display: 'flex' }}><Bookmark size={12} /></button>
+            </div>
+          )}
+          <button onClick={() => { sounds.modalOpen(); setSwapModalOpen(true); }} className="btn btn-outline" style={{ padding: '0.35rem 0.6rem', color: '#FBBF24', borderColor: 'rgba(251,191,36,0.2)', fontSize: '0.7rem' }}><ArrowLeftRight size={12} />{isEmployee ? ` ${lang === 'en' ? 'Swap' : 'Tukar'}` : ''}</button>
+          {isEmployee && <button onClick={handleExportICS} className="btn btn-outline" style={{ padding: '0.35rem 0.6rem', fontSize: '0.7rem' }}><Download size={12} /> .ics</button>}
+          {!isEmployee && (
+            <div style={{ display: 'flex', gap: '0.25rem' }}>
+              <button onClick={() => { sounds.success(); handleShareWA(); }} className="btn btn-outline" style={{ padding: '0.35rem', borderRadius: '50%' }}><MessageCircle size={12} style={{ color: '#34D399' }} /></button>
+              <label className="btn btn-outline" style={{ cursor: 'pointer', padding: '0.35rem', borderRadius: '50%' }}><Upload size={12} style={{ color: 'var(--info)' }} /><input type="file" accept=".xlsx,.xls" onChange={handleImport} style={{ display: 'none' }} /></label>
+              <button onClick={() => { sounds.success(); handleExport(); }} className="btn btn-success" style={{ padding: '0.35rem 0.7rem', fontSize: '0.7rem' }}><Download size={12} /> {t('common.export')}</button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="animate-fade-in-up delay-100" style={{ display: 'flex', gap: '1.25rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+      {/* ═══ LEGEND CHIPS ═══ */}
+      <div className="animate-fade-in-up delay-100" style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
         {shiftTypes.map(type => (
-          <div key={type.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div style={{ width: '14px', height: '14px', borderRadius: '4px', backgroundColor: `var(--shift-${type.id}-bg)`, border: `1px solid var(--shift-${type.id}-border)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 'bold', color: `var(--shift-${type.id}-text)` }}>{type.shortLabel}</div>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '500' }}>{type.label} <span style={{ color: 'var(--text-muted)' }}>({type.time})</span></span>
+          <div key={type.id} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.25rem 0.6rem', borderRadius: 'var(--radius-full)', background: `var(--shift-${type.id}-bg)`, border: `1px solid var(--shift-${type.id}-border)` }}>
+            <span style={{ fontSize: '0.65rem', fontWeight: '800', color: `var(--shift-${type.id}-text)` }}>{type.shortLabel}</span>
+            <span style={{ fontSize: '0.65rem', color: `var(--shift-${type.id}-text)`, opacity: 0.8, fontWeight: '500' }}>{type.label}</span>
+            <span style={{ fontSize: '0.55rem', color: 'var(--text-muted)' }}>{type.time}</span>
           </div>
         ))}
-      </div>
-      <div className="animate-fade-in-up delay-100" style={{ display: 'flex', gap: '1rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
         {longShiftTypes.map(type => (
-          <div key={type.id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <div style={{ padding: '0 4px', height: '14px', borderRadius: '3px', backgroundColor: `var(--shift-${type.id}-bg)`, border: `1px solid var(--shift-${type.id}-border)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 'bold', color: `var(--shift-${type.id}-text)` }}>{type.shortLabel}</div>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: '500' }}>{type.label} <span style={{ opacity: 0.6 }}>({type.time})</span></span>
+          <div key={type.id} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.2rem 0.5rem', borderRadius: 'var(--radius-full)', background: `var(--shift-${type.id}-bg)`, border: `1px solid var(--shift-${type.id}-border)` }}>
+            <span style={{ fontSize: '0.58rem', fontWeight: '800', color: `var(--shift-${type.id}-text)` }}>{type.shortLabel}</span>
+            <span style={{ fontSize: '0.55rem', color: 'var(--text-muted)' }}>{type.time}</span>
           </div>
         ))}
       </div>
 
-      {/* Calendar Grid */}
-      <div className="glass-card animate-fade-in-up delay-200" style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', padding: 0, borderRadius: 'var(--radius-xl)' }}>
+      {/* ═══ CALENDAR GRID ═══ */}
+      <div className="animate-fade-in-up delay-200" style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', borderRadius: 'var(--radius-xl)', border: '1px solid var(--glass-border)', background: 'var(--bg-card)', boxShadow: 'var(--shadow-md)' }}>
         <div style={{ overflowX: 'auto', flex: 1 }}>
           <div style={{ display: 'grid', gridTemplateColumns: columns, minWidth: 'max-content' }}>
             {/* Year View Month Header Row (Only in Year View) */}
@@ -300,7 +308,7 @@ const CalendarView = ({ employees, shifts, updateShift, setBatchShifts, autoHoli
               </>
             )}
             {/* Header Row */}
-            <div style={{ padding: '0.85rem 1rem', borderRight: '1px solid var(--glass-border)', borderBottom: '1px solid var(--glass-border)', backgroundColor: 'var(--bg-elevated)', fontWeight: '700', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', position: 'sticky', left: 0, zIndex: 5 }}>Karyawan</div>
+            <div style={{ padding: '0.7rem 1rem', borderRight: '1px solid var(--glass-border)', borderBottom: '2px solid var(--glass-border)', backgroundColor: 'var(--bg-elevated)', fontWeight: '700', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', position: 'sticky', left: 0, zIndex: 5, fontFamily: "'Outfit', sans-serif" }}>Karyawan</div>
             {datesToRender.map((date, i) => {
               const y = date.getFullYear();
               const m = date.getMonth();
@@ -309,29 +317,66 @@ const CalendarView = ({ employees, shifts, updateShift, setBatchShifts, autoHoli
               const holiday = holidays.find(h => h.date === dateStr);
               const isWeekend = date.getDay() === 0 || date.getDay() === 6;
               const isRedDay = isWeekend || holiday;
+              const isToday = dateStr === todayStr;
               return (
-                <div key={i} title={holiday ? holiday.localName : ''} style={{ padding: viewMode === 'year' ? '0.65rem 0.1rem' : '0.65rem 0.35rem', borderBottom: '1px solid var(--glass-border)', borderRight: '1px solid var(--glass-border)', backgroundColor: isRedDay ? 'rgba(248, 113, 113, 0.06)' : 'var(--bg-elevated)', textAlign: 'center', fontWeight: '600', color: isRedDay ? 'var(--danger)' : 'var(--text-tertiary)', cursor: holiday ? 'help' : 'default', fontSize: '0.75rem', minWidth: 0, overflow: 'hidden' }}>
-                  {viewMode !== 'year' && <div style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.15rem', opacity: 0.7 }}>{['Min','Sen','Sel','Rab','Kam','Jum','Sab'][date.getDay()]}</div>}
-                  <div style={{ fontSize: viewMode === 'year' ? '0.65rem' : '0.95rem', fontWeight: '700' }}>{d}</div>
+                <div key={i} title={holiday ? `${lang === 'en' ? 'National Holiday' : 'Libur Nasional'}: ${holiday.localName}` : ''} style={{
+                  padding: viewMode === 'year' ? '0.5rem 0.1rem' : '0.5rem 0.35rem',
+                  borderBottom: holiday ? '2px solid var(--danger)' : '2px solid var(--glass-border)',
+                  borderRight: '1px solid var(--glass-border)',
+                  backgroundColor: holiday ? 'rgba(248, 113, 113, 0.12)' : isToday ? 'rgba(129,140,248,0.1)' : isWeekend ? 'rgba(248, 113, 113, 0.04)' : 'var(--bg-elevated)',
+                  textAlign: 'center',
+                  fontWeight: '600',
+                  color: holiday ? 'var(--danger)' : isToday ? 'var(--color-primary)' : isWeekend ? 'var(--danger)' : 'var(--text-tertiary)',
+                  cursor: holiday ? 'help' : 'default',
+                  fontSize: '0.72rem',
+                  minWidth: 0,
+                  overflow: 'hidden',
+                  position: 'relative',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}>
+                  {viewMode !== 'year' && <div style={{ fontSize: '0.55rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.1rem', opacity: 0.6, fontFamily: "'Outfit', sans-serif" }}>{['Min','Sen','Sel','Rab','Kam','Jum','Sab'][date.getDay()]}</div>}
+                  <div style={{ fontSize: viewMode === 'year' ? '0.6rem' : '0.9rem', fontWeight: isToday ? '900' : '700', fontFamily: "'Outfit', sans-serif" }}>{d}</div>
+                  {holiday && <div style={{ position: 'absolute', top: '4px', right: '4px', width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--danger)', boxShadow: '0 0 6px rgba(248, 113, 113, 0.6)' }} />}
+                  {isToday && <div style={{ position: 'absolute', bottom: 0, left: '20%', right: '20%', height: '2px', background: 'var(--color-primary)', borderRadius: '2px' }} />}
                 </div>
               );
             })}
 
-            {/* Employee Rows */}
-            {employees.map(emp => (
+            {/* ─── Employee Rows ─── */}
+            {employees.filter(emp => isEmployee ? emp.id === currentEmployeeId : true).map((emp, empIdx) => {
+              const isEven = empIdx % 2 === 0;
+              const rowBg = isEven ? 'var(--bg-main)' : 'var(--bg-elevated)';
+              return (
               <React.Fragment key={emp.id}>
-                <div style={{ padding: '0.65rem 0.85rem', borderRight: '1px solid var(--glass-border)', borderBottom: '1px solid var(--glass-border)', backgroundColor: 'var(--bg-main)', position: 'sticky', left: 0, zIndex: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                    <img src={emp.avatar} alt={emp.name} style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid var(--glass-border)' }} />
+                {/* Name Cell */}
+                <div style={{ 
+                  padding: '0.6rem 0.85rem', 
+                  borderRight: '1px solid var(--glass-border)', 
+                  borderBottom: '1px solid var(--glass-border)', 
+                  backgroundColor: rowBg, 
+                  position: 'sticky', left: 0, zIndex: 4, 
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem',
+                  borderLeft: `3px solid ${['var(--shift-pagi-text)', 'var(--shift-sore-text)', 'var(--shift-malam-text)', 'var(--color-secondary)'][empIdx % 4]}`,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                    <img src={emp.avatar} alt={emp.name} style={{ width: '34px', height: '34px', borderRadius: '10px', border: '2px solid var(--glass-border)', objectFit: 'cover', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }} />
                     <div>
-                      <div style={{ fontWeight: '600', fontSize: '0.82rem', color: 'var(--text-primary)' }}>{emp.name}</div>
-                      <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{emp.role}</div>
+                      <div style={{ fontWeight: '600', fontSize: '0.82rem', color: 'var(--text-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.01em' }}>{emp.name}</div>
+                      <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)', fontWeight: '500', letterSpacing: '0.02em' }}>{emp.role}</div>
                     </div>
                   </div>
-                  {!isViewer && (
-                    <button onClick={() => { sounds.modalOpen(); setAutoGenSingleEmp(emp); setAutoGenModalOpen(true); }} className="btn btn-outline" style={{ padding: '0.2rem', color: 'var(--color-primary)', borderColor: 'rgba(129,140,248,0.15)', backgroundColor: 'transparent', borderRadius: 'var(--radius-sm)' }} title="Generate"><Wand2 size={12} /></button>
+                  {!isViewer && !isEmployee && (
+                    <button onClick={() => { sounds.modalOpen(); setAutoGenSingleEmp(emp); setAutoGenModalOpen(true); }} style={{ padding: '0.3rem', borderRadius: '8px', border: '1px solid rgba(129,140,248,0.12)', background: 'transparent', cursor: 'pointer', color: 'var(--color-primary)', display: 'flex', transition: 'all 0.2s', fontFamily: 'inherit' }} title="Auto-generate"
+                      onMouseEnter={e => e.currentTarget.style.background = 'var(--color-primary-light)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    ><Wand2 size={13} /></button>
                   )}
                 </div>
+
+                {/* Shift Cells */}
                 {datesToRender.map((date, i) => {
                   const y = date.getFullYear();
                   const m = date.getMonth();
@@ -341,25 +386,58 @@ const CalendarView = ({ employees, shifts, updateShift, setBatchShifts, autoHoli
                   const shiftType = allShiftTypes.find(s => s.id === shiftId);
                   const noteKey = `${dateStr}_${emp.id}`;
                   const hasNote = notes && notes[noteKey];
+                  const isToday = dateStr === todayStr;
+                  const holiday = holidays.find(h => h.date === dateStr);
+                  const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                  const isRedDay = isWeekend || holiday;
 
                   return (
                     <div key={i} onClick={() => handleCellClick(emp.id, dateStr, shiftId)}
-                      style={{ padding: viewMode === 'year' ? '0.15rem' : '0.35rem', borderRight: '1px solid var(--glass-border)', borderBottom: '1px solid var(--glass-border)', backgroundColor: 'var(--bg-main)', cursor: isViewer ? 'default' : 'pointer', transition: 'all 0.2s ease', position: 'relative' }}
-                      onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-elevated)'}
-                      onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--bg-main)'}>
+                      style={{
+                        padding: viewMode === 'year' ? '0.15rem' : '0.35rem',
+                        borderRight: '1px solid var(--glass-border)',
+                        borderBottom: '1px solid var(--glass-border)',
+                        backgroundColor: isToday ? 'rgba(129,140,248,0.06)' : isRedDay ? 'rgba(248,113,113,0.02)' : rowBg,
+                        cursor: isViewer || isEmployee ? 'default' : 'pointer',
+                        transition: 'all 0.15s ease',
+                        position: 'relative',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = isToday ? 'rgba(129,140,248,0.12)' : 'var(--bg-card-hover)'; const badge = e.currentTarget.querySelector('[data-badge]'); if (badge) { badge.style.transform = 'scale(1.15)'; badge.style.boxShadow = `0 4px 14px var(--shift-${shiftType?.id || 'pagi'}-bg)`; } }}
+                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = isToday ? 'rgba(129,140,248,0.06)' : isRedDay ? 'rgba(248,113,113,0.02)' : rowBg; const badge = e.currentTarget.querySelector('[data-badge]'); if (badge) { badge.style.transform = 'scale(1)'; badge.style.boxShadow = viewMode !== 'year' ? `0 2px 8px var(--shift-${shiftType?.id || 'pagi'}-bg)` : 'none'; } }}>
                       {shiftType ? (
-                        <div style={{ backgroundColor: `var(--shift-${shiftType.id}-bg)`, color: `var(--shift-${shiftType.id}-text)`, border: `1px solid var(--shift-${shiftType.id}-border)`, padding: viewMode === 'year' ? '0' : '0.3rem 0.4rem', borderRadius: 'var(--radius-sm)', fontSize: viewMode === 'year' ? '0.55rem' : '0.7rem', fontWeight: '700', textAlign: 'center', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', letterSpacing: '0.02em', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                        <div data-badge="true" style={{
+                          backgroundColor: `var(--shift-${shiftType.id}-bg)`,
+                          color: `var(--shift-${shiftType.id}-text)`,
+                          border: `1px solid var(--shift-${shiftType.id}-border)`,
+                          padding: viewMode === 'year' ? '0.1rem' : '0.4rem 0.5rem',
+                          borderRadius: viewMode === 'year' ? '4px' : '12px',
+                          fontSize: viewMode === 'year' ? '0.55rem' : '0.78rem',
+                          fontWeight: '800',
+                          textAlign: 'center',
+                          height: '100%',
+                          minHeight: viewMode === 'year' ? '20px' : '34px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          letterSpacing: '0.04em',
+                          overflow: 'hidden',
+                          whiteSpace: 'nowrap',
+                          fontFamily: "'Outfit', sans-serif",
+                          boxShadow: viewMode !== 'year' ? `0 2px 8px var(--shift-${shiftType.id}-bg)` : 'none',
+                          transition: 'transform 0.15s ease',
+                        }}>
                           {viewMode === 'year' ? shiftType.shortLabel.charAt(0) : (shiftType.shortLabel || shiftType.label)}
                         </div>
                       ) : (
-                        <div style={{ width: '100%', height: '100%', minHeight: viewMode === 'year' ? '20px' : '28px', border: viewMode === 'year' ? 'none' : '1px dashed var(--glass-border)', borderRadius: 'var(--radius-sm)' }} />
+                        <div style={{ width: '100%', height: '100%', minHeight: viewMode === 'year' ? '20px' : '34px', border: viewMode === 'year' ? 'none' : '1px dashed rgba(255,255,255,0.03)', borderRadius: '12px' }} />
                       )}
-                      {hasNote && <div style={{ position: 'absolute', top: '2px', right: '3px', width: '6px', height: '6px', borderRadius: '50%', background: '#FBBF24', boxShadow: '0 0 4px rgba(251,191,36,0.5)' }} title={notes[noteKey]} />}
+                      {hasNote && <div style={{ position: 'absolute', top: '3px', right: '4px', width: '7px', height: '7px', borderRadius: '50%', background: '#FBBF24', boxShadow: '0 0 8px rgba(251,191,36,0.7)' }} title={notes[noteKey]} />}
                     </div>
                   );
                 })}
               </React.Fragment>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
