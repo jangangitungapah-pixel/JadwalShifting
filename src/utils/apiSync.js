@@ -61,9 +61,9 @@ export const subscribeToAllApi = (callback) => {
     }
   };
   
-  // Initial fetch and then poll every 3 seconds
+  // Initial fetch and then poll every 15 seconds (reduced from 3s to prevent race conditions)
   poll();
-  interval = setInterval(poll, 3000);
+  interval = setInterval(poll, 15000);
   
   return () => clearInterval(interval);
 };

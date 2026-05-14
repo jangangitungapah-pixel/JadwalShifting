@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Download, FileText, Printer, DollarSign, Calendar, Info } from 'lucide-react';
-import { allShiftTypes } from '../utils/dummyData';
+// dummyData not needed here — shift logic is inline
 import { sounds } from '../utils/soundService';
 import { useTranslation } from '../utils/i18n.jsx';
 
@@ -72,7 +72,7 @@ const Payroll = ({ employees, shifts, cutOffDate, incentiveAmount, holidayIncent
       const baseSalaryNormal = baseSalaryMonthly;
       const fixedAllowance = 700000;
       const materialAllowance = emp.materialAllowance || 0;
-      const baseSalarySP = 0; // Gaji pokok sudah bulanan (fixed), SP hanya dapat insentif tambahan
+
       const totalIncentives = normalIncentives + holidayIncentives + spIncentives;
       const totalSalary = baseSalaryNormal + fixedAllowance + materialAllowance + totalIncentives;
 
@@ -84,7 +84,7 @@ const Payroll = ({ employees, shifts, cutOffDate, incentiveAmount, holidayIncent
         normalShifts,
         spShifts,
         baseSalaryNormal,
-        baseSalarySP,
+
         normalIncentives,
         holidayIncentives,
         spIncentives,
@@ -151,33 +151,33 @@ const Payroll = ({ employees, shifts, cutOffDate, incentiveAmount, holidayIncent
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
               <div>
                 <h4 style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.75rem', borderBottom: '1px dashed var(--glass-border)', paddingBottom: '0.25rem' }}>{lang === 'en' ? 'Salary Components' : 'Komponen Gaji'}</h4>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
                   <span>{lang === 'en' ? 'Monthly Base Salary' : 'Gaji Pokok Bulanan'}</span>
                   <span style={{ fontWeight: '500' }}>{formatCurrency(data.baseSalaryNormal)}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
                   <span>{lang === 'en' ? 'Fixed Allowance' : 'Tunjangan Tetap'}</span>
                   <span style={{ fontWeight: '500' }}>{formatCurrency(data.fixedAllowance)}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
                   <span>{lang === 'en' ? 'Material Allowance' : 'Tunjangan Material'}</span>
                   <span style={{ fontWeight: '500' }}>{formatCurrency(data.materialAllowance)}</span>
                 </div>
               </div>
               <div>
                 <h4 style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.75rem', borderBottom: '1px dashed var(--glass-border)', paddingBottom: '0.25rem' }}>{lang === 'en' ? 'Incentives & Allowances' : 'Insentif & Tunjangan'}</h4>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
                   <span>{lang === 'en' ? 'Normal Incentive' : 'Insentif Normal'}</span>
                   <span style={{ fontWeight: '500' }}>{formatCurrency(data.normalIncentives)}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
                   <span>{lang === 'en' ? 'Holiday Incentive' : 'Insentif Libur Nasional'}</span>
                   <span style={{ fontWeight: '500' }}>{formatCurrency(data.holidayIncentives)}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
                   <span>{lang === 'en' ? 'Long Shift (SP) Incentive' : 'Insentif Long Shift (SP)'}</span>
                   <span style={{ fontWeight: '500' }}>{formatCurrency(data.spIncentives)}</span>
                 </div>

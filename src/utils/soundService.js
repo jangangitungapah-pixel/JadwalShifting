@@ -35,6 +35,7 @@ const playTone = (frequency, type, duration, vol, glideTo = null, isHighPriority
       
       oscillator.start();
       oscillator.stop(audioCtx.currentTime + duration);
+      oscillator.onended = () => { oscillator.disconnect(); gainNode.disconnect(); };
     } catch (e) {
       console.warn('Audio play failed', e);
     }

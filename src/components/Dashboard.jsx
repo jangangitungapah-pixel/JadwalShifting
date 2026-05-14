@@ -7,7 +7,7 @@ import { useTranslation } from '../utils/i18n.jsx';
 
 const COLORS = ['#60A5FA', '#FBBF24', '#A78BFA', '#F87171', '#2DD4BF', '#F472B6'];
 
-const Dashboard = ({ employees, shifts, activityLogs, leaves, swapRequests }) => {
+const Dashboard = ({ employees, shifts, activityLogs, leaves, swapRequests, isEmployee, currentEmployeeId }) => {
   const { t, lang } = useTranslation();
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -16,11 +16,14 @@ const Dashboard = ({ employees, shifts, activityLogs, leaves, swapRequests }) =>
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const ms = String(month + 1).padStart(2, '0');
 
+  // Filter employees for employee role
+  const visibleEmployees = isEmployee && currentEmployeeId ? employees.filter(e => e.id === currentEmployeeId) : employees;
+
   // Today stats
   const todayShifts = shifts[todayStr] || {};
-  const working = employees.filter(e => todayShifts[e.id] && todayShifts[e.id] !== 'libur').length;
-  const off = employees.length - working;
-  const longShiftToday = employees.filter(e => todayShifts[e.id]?.includes('sp')).length;
+  const working = visibleEmployees.filter(e => todayShifts[e.id] && todayShifts[e.id] !== 'libur').length;
+  const off = visibleEmployees.length - working;
+  const longShiftToday = visibleEmployees.filter(e => todayShifts[e.id]?.includes('sp')).length;
 
   // Monthly stats
   const monthlyStats = useMemo(() => {
@@ -60,7 +63,7 @@ const Dashboard = ({ employees, shifts, activityLogs, leaves, swapRequests }) =>
   const pendingSwaps = (swapRequests || []).filter(r => r.status === 'pending').length;
 
   const statCards = [
-    { label: t('dash.totalEmployees'), value: employees.length, icon: Users, color: '#818CF8', bg: 'var(--color-primary-light)', glow: 'var(--color-primary-glow)' },
+    { label: t('dash.totalEmployees'), value: visibleEmployees.length, icon: Users, color: '#818CF8', bg: 'var(--color-primary-light)', glow: 'var(--color-primary-glow)' },
     { label: t('dash.workingToday'), value: working, icon: CalendarCheck, color: '#34D399', bg: 'var(--success-bg)', glow: 'rgba(52,211,153,0.15)' },
     { label: t('dash.offToday'), value: off, icon: CalendarX, color: '#F87171', bg: 'var(--danger-bg)', glow: 'rgba(248,113,113,0.15)' },
     { label: t('dash.longShiftMonth'), value: monthlyStats.spCount, icon: Shield, color: '#F472B6', bg: 'var(--color-accent-glow)', glow: 'rgba(244,114,182,0.15)' },
@@ -85,7 +88,7 @@ const Dashboard = ({ employees, shifts, activityLogs, leaves, swapRequests }) =>
       </div>
 
       {/* Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
         {statCards.map((card, i) => (
           <div key={i} className={`glass-card animate-fade-in-up delay-${(i + 1) * 100}`} style={{ padding: '1.25rem', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: card.glow, filter: 'blur(20px)' }} />
@@ -102,7 +105,7 @@ const Dashboard = ({ employees, shifts, activityLogs, leaves, swapRequests }) =>
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.25rem', marginBottom: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
         {/* Conflicts */}
         <div className="glass-card animate-fade-in-up delay-300" style={{ padding: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
@@ -150,7 +153,7 @@ const Dashboard = ({ employees, shifts, activityLogs, leaves, swapRequests }) =>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
         {/* Pie Chart */}
         <div className="glass-card animate-fade-in-up delay-500" style={{ padding: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>

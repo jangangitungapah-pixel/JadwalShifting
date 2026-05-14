@@ -117,7 +117,7 @@ const Reports = ({ employees, shifts, cutOffDate, incentiveAmount, holidayIncent
       reports.push({ month: m, year: y, data: calculateIncentive(y, m) });
     }
     return reports;
-  }, [employees, shifts, selectedMonth, selectedYear, multiMonth, monthRange, incentiveAmount, holidayIncentiveAmount, spIncentiveAmount, holidays]);
+  }, [employees, shifts, selectedMonth, selectedYear, multiMonth, monthRange, cutOffDate, incentiveAmount, holidayIncentiveAmount, spIncentiveAmount, holidays]);
 
   const currentData = reportData[0]?.data || [];
   const totalIncentive = currentData.reduce((s, d) => s + d.total, 0);
@@ -164,7 +164,13 @@ const Reports = ({ employees, shifts, cutOffDate, incentiveAmount, holidayIncent
         const s = shifts[ds]?.[emp.id];
         if (s && s !== 'libur') {
           const st = allShiftTypes.find(t => t.id === s);
-          ics += `BEGIN:VEVENT\nDTSTART:${selectedYear}${ms}${String(i).padStart(2, '0')}T080000\nDTEND:${selectedYear}${ms}${String(i).padStart(2, '0')}T170000\nSUMMARY:${emp.name} - ${st?.label || s}\nEND:VEVENT\n`;
+          // Use correct times per shift type
+          let dtStart = '080000', dtEnd = '160000';
+          if (s === 'sore' || s === 'pagi-sp-sore') { dtStart = '160000'; dtEnd = '235959'; }
+          else if (s === 'malam' || s === 'sore-sp-malam') { dtStart = '000000'; dtEnd = '080000'; }
+          else if (s === 'sp-pagi-sore') { dtStart = '080000'; dtEnd = '235959'; }
+          else if (s === 'sp-sore-malam') { dtStart = '160000'; dtEnd = '080000'; }
+          ics += `BEGIN:VEVENT\nDTSTART:${selectedYear}${ms}${String(i).padStart(2, '0')}T${dtStart}\nDTEND:${selectedYear}${ms}${String(i).padStart(2, '0')}T${dtEnd}\nSUMMARY:${emp.name} - ${st?.label || s}\nEND:VEVENT\n`;
         }
       }
     });
@@ -179,9 +185,9 @@ const Reports = ({ employees, shifts, cutOffDate, incentiveAmount, holidayIncent
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
             <div style={{ width: '8px', height: '32px', borderRadius: '4px', background: 'linear-gradient(180deg, #34D399, var(--color-primary))' }} />
-            <h2 className="page-title">{t('rep.title')}</h2>
+            <h2 className="page-title">{t('rpt.title')}</h2>
           </div>
-          <p className="page-subtitle" style={{ marginLeft: '1.75rem' }}>{t('rep.subtitle')}</p>
+          <p className="page-subtitle" style={{ marginLeft: '1.75rem' }}>{t('rpt.subtitle')}</p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <select className="input" value={selectedMonth} onChange={e => setSelectedMonth(+e.target.value)} style={{ width: 'auto', colorScheme: 'dark', fontSize: '0.82rem' }}>
@@ -199,7 +205,7 @@ const Reports = ({ employees, shifts, cutOffDate, incentiveAmount, holidayIncent
       </div>
 
       {/* Summary Cards */}
-      <div className="animate-fade-in-up delay-100" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.85rem', marginBottom: '1.25rem' }}>
+      <div className="animate-fade-in-up delay-100" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.85rem', marginBottom: '1.25rem' }}>
         {[
           { label: t('dash.totalEmployees'), value: employees.length, icon: Users, color: '#818CF8' },
           { label: lang === 'en' ? 'Shift Incentive' : 'Shift Insentif', value: fmt(totalShiftIncentive), icon: DollarSign, color: '#34D399' },

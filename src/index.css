@@ -702,19 +702,200 @@ body::after {
   .sidebar {
     display: none !important;
   }
+
+  /* Main content area — no sidebar offset, add bottom padding for mobile nav */
   main {
     margin-left: 0 !important;
-    padding: 0.75rem !important;
+    padding: 0.75rem 0.65rem !important;
   }
+  
+  .main-content-wrapper {
+    padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
   .page-title {
-    font-size: 1.35rem;
+    font-size: 1.25rem;
   }
   .page-subtitle {
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     margin-left: 0 !important;
   }
+
   .glass-card {
     border-radius: var(--radius-lg) !important;
+  }
+
+  /* Glass card — disable hover lift on touch */
+  .glass-card:hover {
+    transform: none !important;
+  }
+
+  /* ── Mobile Bottom Navigation ── */
+  .mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    display: flex !important;
+    align-items: stretch;
+    justify-content: space-around;
+    background: rgba(12, 18, 36, 0.92);
+    backdrop-filter: blur(24px) saturate(1.6);
+    -webkit-backdrop-filter: blur(24px) saturate(1.6);
+    border-top: 1px solid var(--glass-border);
+    padding: 0.35rem 0.25rem calc(0.35rem + env(safe-area-inset-bottom, 0px)) 0.25rem;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
+  }
+
+  :root[data-theme="light"] .mobile-bottom-nav {
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+  }
+
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    flex: 1;
+    padding: 0.4rem 0.15rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 0.58rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    transition: color 0.2s, transform 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+    border-radius: var(--radius-sm);
+  }
+
+  .mobile-nav-item.active {
+    color: var(--color-primary);
+  }
+
+  .mobile-nav-item.active::before {
+    content: '';
+    position: absolute;
+    top: -0.35rem;
+    left: 25%;
+    right: 25%;
+    height: 2px;
+    background: var(--color-primary);
+    border-radius: 2px;
+    box-shadow: 0 0 8px var(--color-primary-glow);
+  }
+
+  .mobile-nav-item:active {
+    transform: scale(0.92);
+  }
+
+  /* ── Mobile More Menu ── */
+  .mobile-more-menu {
+    position: fixed;
+    bottom: calc(3.8rem + env(safe-area-inset-bottom, 0px));
+    left: 0.5rem;
+    right: 0.5rem;
+    z-index: 99;
+    background: var(--bg-elevated);
+    backdrop-filter: blur(24px) saturate(1.5);
+    -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    border: 1px solid var(--glass-border-hover);
+    border-radius: var(--radius-xl);
+    padding: 0.75rem;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    box-shadow: var(--shadow-xl);
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .mobile-more-menu button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    padding: 0.65rem 0.25rem;
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-family: var(--font-body);
+    font-size: 0.62rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-more-menu button.active {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    border-color: rgba(129, 140, 248, 0.3);
+  }
+
+  /* ── Buttons — Bigger Touch Target ── */
+  .btn {
+    padding: 0.7rem 1.2rem;
+    font-size: 0.82rem;
+    min-height: 44px;
+  }
+
+  /* ── Inputs — Bigger Touch Target ── */
+  .input {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    min-height: 44px;
+  }
+
+  /* ── Modals — Full Width on Mobile ── */
+  .glass-card[style*="maxWidth"] {
+    max-width: calc(100vw - 1.5rem) !important;
+  }
+
+  /* ── Tables — Horizontal Scroll ── */
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    width: 100%;
+  }
+
+  /* ── Page Header — Compact ── */
+  .page-header {
+    margin-bottom: 1rem;
+  }
+
+  /* ── Chatbot Mobile Positioning ── */
+  .chatbot-toggle, .chatbot-window {
+    bottom: calc(4.8rem + env(safe-area-inset-bottom, 0px)) !important;
+    right: 0.75rem !important;
+  }
+  
+  .chatbot-window {
+    width: calc(100vw - 1.5rem) !important;
+    height: 60vh !important;
+  }
+
+  /* ── Orbs — smaller on mobile ── */
+  .orb-1 { width: 300px !important; height: 300px !important; }
+  .orb-2 { width: 250px !important; height: 250px !important; }
+  .orb-3 { width: 200px !important; height: 200px !important; }
+}
+
+/* ── Hide mobile nav on desktop ── */
+@media (min-width: 769px) {
+  .mobile-bottom-nav,
+  .mobile-more-menu,
+  .mobile-more-overlay {
+    display: none !important;
   }
 }
 

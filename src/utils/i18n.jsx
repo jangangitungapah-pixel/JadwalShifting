@@ -66,6 +66,7 @@ const translations = {
     'emp.availability': 'Ketersediaan',
     // Reports
     'rpt.title': 'Laporan Insentif',
+    'rpt.subtitle': 'Kelola dan pantau laporan insentif karyawan.',
     'rpt.period': 'Periode',
     'rpt.exportExcel': 'Ekspor Excel',
     'rpt.print': 'Cetak',
@@ -213,6 +214,7 @@ const translations = {
     'emp.constraints': 'Constraints',
     'emp.availability': 'Availability',
     'rpt.title': 'Incentive Report',
+    'rpt.subtitle': 'Manage and monitor incentive reports.',
     'rpt.period': 'Period',
     'rpt.exportExcel': 'Export Excel',
     'rpt.print': 'Print',

@@ -46,7 +46,7 @@ const LoginGate = ({ children, onLogin, employees }) => {
       setIsAuthenticated(true);
       if (onLogin) onLogin('employee');
     } else {
-      if (pin === storedPin || pin === '0000') { // 0000 fallback
+      if (pin === storedPin) {
         sounds.success();
         sessionStorage.setItem('shift_auth', 'true');
         sessionStorage.setItem('shift_role', role);
@@ -71,7 +71,7 @@ const LoginGate = ({ children, onLogin, employees }) => {
 
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
           <div style={{ width: '56px', height: '56px', borderRadius: 'var(--radius-xl)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 30px rgba(99,102,241,0.4)' }}>
-            <img src="/app-icon.svg" alt="ShiftSync Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={`${import.meta.env.BASE_URL}app-icon.svg`} alt="ShiftSync Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
         </div>
 

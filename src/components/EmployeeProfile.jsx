@@ -125,7 +125,8 @@ const EmployeeProfile = ({ employee, onClose, onUpdate, shifts }) => {
         {activeTab === 'stats' && (
           <div>
             {shiftStats.length > 0 ? (
-              <ResponsiveContainer width="100%" height={200}>
+              <>
+                <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
                   <Pie data={shiftStats} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3} dataKey="value" label={({ name, value }) => `${name}: ${value}`} style={{ fontSize: '0.7rem' }}>
                     {shiftStats.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
@@ -133,7 +134,16 @@ const EmployeeProfile = ({ employee, onClose, onUpdate, shifts }) => {
                   <Tooltip contentStyle={{ background: 'var(--bg-elevated)', border: '1px solid var(--glass-border)', borderRadius: '8px', fontSize: '0.75rem', color: 'var(--text-primary)' }} />
                 </PieChart>
               </ResponsiveContainer>
-            ) : <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', textAlign: 'center', padding: '2rem' }}>Belum ada data shift.</p>}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(60px, 1fr))', gap: '0.5rem', marginTop: '1rem' }}>
+                {shiftStats.map((s, i) => (
+                  <div key={s.name} style={{ background: 'var(--bg-elevated)', padding: '0.5rem', borderRadius: 'var(--radius-sm)', textAlign: 'center', border: `1px solid ${COLORS[i % COLORS.length]}40` }}>
+                    <div style={{ fontSize: '1rem', fontWeight: '800', color: COLORS[i % COLORS.length] }}>{s.value}</div>
+                    <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{s.name}</div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', textAlign: 'center', padding: '2rem' }}>Belum ada data shift.</p>}
           </div>
         )}
 

@@ -78,9 +78,9 @@ const AnalyticsView = ({ employees, shifts, cutOffDate, incentiveAmount, holiday
       <div className="page-header animate-fade-in-up">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
           <div style={{ width: '8px', height: '32px', borderRadius: '4px', background: 'linear-gradient(180deg, #818CF8, #22D3EE)', boxShadow: '0 0 12px rgba(129,140,248,0.2)' }} />
-          <h2 className="page-title">{t('stat.title')}</h2>
+          <h2 className="page-title">{t('analytics.title')}</h2>
         </div>
-        <p className="page-subtitle" style={{ marginLeft: '1.75rem' }}>{t('stat.subtitle')}</p>
+        <p className="page-subtitle" style={{ marginLeft: '1.75rem' }}>{t('analytics.subtitle')}</p>
       </div>
 
       {/* Month selector */}
@@ -91,7 +91,7 @@ const AnalyticsView = ({ employees, shifts, cutOffDate, incentiveAmount, holiday
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
         {/* Pie: Shift Distribution */}
         <div className="glass-card animate-fade-in-up delay-100" style={cardStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
@@ -129,7 +129,7 @@ const AnalyticsView = ({ employees, shifts, cutOffDate, incentiveAmount, holiday
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
         {/* Bar: Workload */}
         <div className="glass-card animate-fade-in-up delay-300" style={cardStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
@@ -198,23 +198,28 @@ const AnalyticsView = ({ employees, shifts, cutOffDate, incentiveAmount, holiday
           <h3 style={{ fontSize: '0.95rem', fontWeight: '700' }}>{lang === 'en' ? 'Attendance Heatmap' : 'Heatmap Kehadiran'}</h3>
         </div>
         <div style={{ overflowX: 'auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: `100px repeat(${new Date(selectedYear, selectedMonth + 1, 0).getDate()}, 1fr)`, gap: '2px', minWidth: 'max-content' }}>
-            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', padding: '0.25rem' }}></div>
-            {Array.from({ length: new Date(selectedYear, selectedMonth + 1, 0).getDate() }, (_, i) => (
-              <div key={i} style={{ fontSize: '0.6rem', color: 'var(--text-muted)', textAlign: 'center', padding: '0.2rem' }}>{i + 1}</div>
-            ))}
-            {employees.map(emp => (
-              <React.Fragment key={emp.id}>
-                <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', padding: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{emp.name?.split(' ')[0]}</div>
-                {Array.from({ length: new Date(selectedYear, selectedMonth + 1, 0).getDate() }, (_, i) => {
-                  const ds = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`;
-                  const s = shifts[ds]?.[emp.id];
-                  const bg = s === 'pagi' ? 'rgba(96,165,250,0.5)' : s === 'sore' ? 'rgba(251,191,36,0.5)' : s === 'malam' ? 'rgba(167,139,250,0.5)' : s === 'libur' ? 'rgba(248,113,113,0.3)' : s?.includes('sp') ? 'rgba(20,184,166,0.5)' : 'rgba(255,255,255,0.03)';
-                  return <div key={i} title={`${emp.name} - ${s || '-'}`} style={{ width: '100%', height: '20px', borderRadius: '2px', background: bg, transition: 'all 0.2s' }} />;
-                })}
-              </React.Fragment>
-            ))}
-          </div>
+          {(() => {
+            const heatmapDates = getDateRange(selectedYear, selectedMonth, cutOffDate);
+            return (
+              <div style={{ display: 'grid', gridTemplateColumns: `100px repeat(${heatmapDates.length}, 1fr)`, gap: '2px', minWidth: 'max-content' }}>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', padding: '0.25rem' }}></div>
+                {heatmapDates.map((d, i) => (
+                  <div key={i} style={{ fontSize: '0.6rem', color: 'var(--text-muted)', textAlign: 'center', padding: '0.2rem' }}>{d.getDate()}</div>
+                ))}
+                {employees.map(emp => (
+                  <React.Fragment key={emp.id}>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', padding: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{emp.name?.split(' ')[0]}</div>
+                    {heatmapDates.map((d, i) => {
+                      const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                      const s = shifts[ds]?.[emp.id];
+                      const bg = s === 'pagi' ? 'rgba(96,165,250,0.5)' : s === 'sore' ? 'rgba(251,191,36,0.5)' : s === 'malam' ? 'rgba(167,139,250,0.5)' : s === 'libur' ? 'rgba(248,113,113,0.3)' : s?.includes('sp') ? 'rgba(20,184,166,0.5)' : 'rgba(255,255,255,0.03)';
+                      return <div key={i} title={`${emp.name} - ${s || '-'}`} style={{ width: '100%', height: '20px', borderRadius: '2px', background: bg, transition: 'all 0.2s' }} />;
+                    })}
+                  </React.Fragment>
+                ))}
+              </div>
+            );
+          })()}
         </div>
         <div style={{ display: 'flex', gap: '1rem', marginTop: '0.75rem', justifyContent: 'center' }}>
           {[{ l: 'Pagi', c: 'rgba(96,165,250,0.5)' }, { l: 'Sore', c: 'rgba(251,191,36,0.5)' }, { l: 'Malam', c: 'rgba(167,139,250,0.5)' }, { l: 'Libur', c: 'rgba(248,113,113,0.3)' }, { l: 'SP', c: 'rgba(20,184,166,0.5)' }].map(x => (

@@ -8,14 +8,25 @@ export const queryOllama = async (userMessage, context) => {
     return "Tolong masukkan Gemini API Key Anda di menu Pengaturan (AI Assistant) agar saya bisa cerdas membantu Anda.";
   }
 
-  // Hapus pembatasan data. Kirim seluruh data aplikasi apa adanya agar Gemini tahu segalanya.
+  // Sanitize data: strip PII and limit scope to reduce token usage and protect privacy
+  const today = new Date();
+  const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
+  const sanitizedEmployees = employees.map(({ id, name, role, department }) => ({ id, name, role, department }));
+
+  // Only include shifts for current month to limit token usage
+  const relevantShifts = {};
+  Object.keys(shifts).forEach(dateStr => {
+    if (dateStr.startsWith(currentMonth)) relevantShifts[dateStr] = shifts[dateStr];
+  });
+
   const appState = {
-    tanggalHariIni: new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
-    karyawan: employees,
-    jadwalShift: shifts,
-    pengajuanCuti: leaves,
+    tanggalHariIni: today.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+    karyawan: sanitizedEmployees,
+    jadwalShiftBulanIni: relevantShifts,
+    pengajuanCuti: (leaves || []).map(({ id, empId, type, startDate, endDate, status }) => ({ id, empId, type, startDate, endDate, status })),
     bursaShift: openShifts,
-    tukarShift: swapRequests
+    tukarShift: (swapRequests || []).map(({ id, fromEmpId, toEmpId, dateStr, status }) => ({ id, fromEmpId, toEmpId, dateStr, status }))
   };
 
   const systemPrompt = `Kamu adalah asisten cerdas aplikasi penjadwalan ShiftSync bernama ShiftBot. Jawab pertanyaan pengguna dengan singkat, jelas, dan ramah dalam bahasa Indonesia. Kamu memiliki akses penuh dan TIDAK DIBATASI ke seluruh database aplikasi saat ini.

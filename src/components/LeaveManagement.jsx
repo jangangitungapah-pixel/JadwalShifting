@@ -34,13 +34,12 @@ const LeaveManagement = ({ employees, leaves, onAddLeave, onUpdateLeave, shifts,
     onUpdateLeave({ ...leave, status: 'approved' });
     // Auto-update shifts to libur
     const newShifts = { ...shifts };
-    let curr = new Date(leave.startDate);
-    const end = new Date(leave.endDate);
-    while (curr <= end) {
+    const start = new Date(leave.startDate + 'T00:00:00');
+    const end = new Date(leave.endDate + 'T00:00:00');
+    for (let curr = new Date(start); curr <= end; curr.setDate(curr.getDate() + 1)) {
       const ds = `${curr.getFullYear()}-${String(curr.getMonth()+1).padStart(2,'0')}-${String(curr.getDate()).padStart(2,'0')}`;
       if (!newShifts[ds]) newShifts[ds] = {};
       newShifts[ds][leave.empId] = 'libur';
-      curr.setDate(curr.getDate() + 1);
     }
     setBatchShifts(newShifts);
   };

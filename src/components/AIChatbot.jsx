@@ -61,7 +61,7 @@ const AIChatbot = ({ context }) => {
       {!isOpen && (
         <button
           onClick={toggleChat}
-          className="animate-fade-in-up"
+          className="animate-fade-in-up chatbot-toggle"
           style={{
             position: 'fixed',
             bottom: '1.5rem',
@@ -89,7 +89,7 @@ const AIChatbot = ({ context }) => {
 
       {isOpen && (
         <div
-          className="animate-fade-in-up"
+          className="animate-fade-in-up chatbot-window"
           style={{
             position: 'fixed',
             bottom: '1.5rem',

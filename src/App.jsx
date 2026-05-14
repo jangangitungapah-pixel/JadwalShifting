@@ -14,6 +14,7 @@ import LoginGate from './components/LoginGate';
 import Payroll from './components/Payroll';
 import ShiftBidding from './components/ShiftBidding';
 import AIChatbot from './components/AIChatbot';
+import MobileNav from './components/MobileNav';
 import { initialEmployees, initialShifts } from './utils/dummyData';
 import { createUndoManager } from './utils/undoManager';
 import { saveVersion, startAutoBackup, stopAutoBackup } from './utils/versionHistory';
@@ -159,15 +160,9 @@ function App() {
     return () => { stopAutoBackup(); unsub(); };
   }, []);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.ctrlKey && e.key === 'z') { e.preventDefault(); handleUndo(); }
-      else if (e.ctrlKey && e.key === 'y') { e.preventDefault(); handleRedo(); }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [shifts]);
+  // Keyboard shortcuts (refs declared here, assigned after handleUndo/handleRedo below)
+  const handleUndoRef = React.useRef();
+  const handleRedoRef = React.useRef();
 
   // Global UI Sounds
   useEffect(() => {
@@ -223,10 +218,12 @@ function App() {
 
   const addLog = (message) => {
     const newLog = { id: Date.now().toString(), message, timestamp: new Date().toISOString() };
-    const updatedLogs = [newLog, ...activityLogs].slice(0, 100);
-    setActivityLogs(updatedLogs);
-    localStorage.setItem('shift_logs', JSON.stringify(updatedLogs));
-    apiSyncPath('logs', updatedLogs);
+    setActivityLogs(prev => {
+      const updatedLogs = [newLog, ...prev].slice(0, 100);
+      localStorage.setItem('shift_logs', JSON.stringify(updatedLogs));
+      apiSyncPath('logs', updatedLogs);
+      return updatedLogs;
+    });
   };
 
   const toggleAutoHoliday = () => {
@@ -314,9 +311,21 @@ function App() {
     addLog('Redo: Jadwal dikembalikan ke versi berikutnya');
   };
 
+  // Assign refs now that handleUndo/handleRedo are declared
+  handleUndoRef.current = handleUndo;
+  handleRedoRef.current = handleRedo;
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.ctrlKey && e.key === 'z') { e.preventDefault(); handleUndoRef.current(); }
+      else if (e.ctrlKey && e.key === 'y') { e.preventDefault(); handleRedoRef.current(); }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // Employee CRUD
   const addEmployee = (emp) => {
-    const newEmp = { ...emp, id: Date.now().toString(), avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${emp.name}`, phone: emp.phone || '', email: emp.email || '', joinDate: emp.joinDate || '', department: emp.department || 'Umum', constraints: emp.constraints || {}, preferences: emp.preferences || {} };
+    const newEmp = { ...emp, id: Date.now().toString(), avatar: emp.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${emp.name}`, phone: emp.phone || '', email: emp.email || '', joinDate: emp.joinDate || '', department: emp.department || 'Umum', constraints: emp.constraints || {}, preferences: emp.preferences || {} };
     const updated = [...employees, newEmp];
     setEmployees(updated); localStorage.setItem('shift_employees', JSON.stringify(updated));
     apiSyncPath('employees', updated);
@@ -423,7 +432,7 @@ function App() {
     sessionStorage.setItem('shift_auth', 'false');
     sessionStorage.removeItem('shift_role');
     sessionStorage.removeItem('shift_employee_id');
-    window.location.href = window.location.pathname;
+    window.dispatchEvent(new Event('shift_logout'));
   };
 
   return (
@@ -432,7 +441,7 @@ function App() {
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} theme={theme} toggleTheme={toggleTheme} syncStatus={syncStatus} forceSync={forceSync} isViewer={isViewer} isEmployee={isEmployee} onLogout={handleLogout} />
         <main style={{ flex: 1, marginLeft: '17.5rem', overflowY: 'auto', position: 'relative', padding: '1.25rem' }}>
           <div className="orb orb-1" /><div className="orb orb-2" /><div className="orb orb-3" />
-          <div key={activeTab} className="animate-fade-in-up" style={{ position: 'relative', zIndex: 1, height: '100%' }}>
+          <div key={activeTab} className="animate-fade-in-up main-content-wrapper" style={{ position: 'relative', zIndex: 1, minHeight: '100%' }}>
             {activeTab === 'dashboard' && <Dashboard employees={employees} shifts={shifts} activityLogs={activityLogs} leaves={leaves} swapRequests={swapRequests} isEmployee={isEmployee} currentEmployeeId={currentEmployeeId} />}
             {activeTab === 'employees' && <EmployeeList employees={employees} onAdd={addEmployee} onEdit={editEmployee} onDelete={deleteEmployee} shifts={shifts} departments={departments} isViewer={isViewer} isEmployee={isEmployee} currentEmployeeId={currentEmployeeId} />}
             {activeTab === 'calendar' && <CalendarView employees={employees} shifts={shifts} updateShift={updateShift} setBatchShifts={setBatchShifts} autoHolidayEnabled={autoHolidayEnabled} holidays={allHolidays} canUndo={canUndo} canRedo={canRedo} onUndo={handleUndo} onRedo={handleRedo} notes={notes} updateNote={updateNote} swapRequests={swapRequests} onAddSwapRequest={addSwapRequest} onResolveSwap={resolveSwap} isViewer={isViewer} isEmployee={isEmployee} currentEmployeeId={currentEmployeeId} />}
@@ -445,6 +454,7 @@ function App() {
             {activeTab === 'settings' && <SettingsView autoHolidayEnabled={autoHolidayEnabled} toggleAutoHoliday={toggleAutoHoliday} cutOffDate={cutOffDate} incentiveAmount={incentiveAmount} holidayIncentiveAmount={holidayIncentiveAmount} spIncentiveAmount={spIncentiveAmount} updateSettings={updateSettings} allHolidays={allHolidays} onAddHoliday={addCustomHoliday} onDeleteHoliday={deleteCustomHoliday} theme={theme} toggleTheme={toggleTheme} departments={departments} updateDepartments={updateDepartments} notificationsEnabled={notificationsEnabled} toggleNotifications={toggleNotifications} shifts={shifts} syncStatus={syncStatus} forceSync={forceSync} geminiApiKey={geminiApiKey} setGeminiApiKey={setGeminiApiKey} />}
           </div>
         </main>
+        <MobileNav activeTab={activeTab} setActiveTab={setActiveTab} theme={theme} toggleTheme={toggleTheme} isViewer={isViewer} isEmployee={isEmployee} onLogout={handleLogout} />
       </div>
       <AIChatbot context={{ employees, shifts, leaves, swapRequests, openShifts, geminiApiKey }} />
     </LoginGate>

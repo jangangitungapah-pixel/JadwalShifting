@@ -36,8 +36,8 @@ const CalendarView = ({ employees, shifts, updateShift, setBatchShifts, autoHoli
     } else if (viewMode === 'week') {
       const date = new Date(currentDate);
       const day = date.getDay();
-      const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-      const monday = new Date(date.setDate(diff));
+      const diff = day === 0 ? -6 : 1 - day;
+      const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate() + diff);
       for (let i = 0; i < 7; i++) dates.push(new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i));
     } else if (viewMode === 'month') {
       const dm = new Date(year, month + 1, 0).getDate();
@@ -206,7 +206,15 @@ const CalendarView = ({ employees, shifts, updateShift, setBatchShifts, autoHoli
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
   const getBaseWidths = () => {
+    if (isMobile) {
+      if (viewMode === 'day') return { name: 120, col: 140 };
+      if (viewMode === 'week') return { name: 100, col: 56 };
+      if (viewMode === 'month') return { name: 100, col: 44 };
+      if (viewMode === 'year') return { name: 80, col: 22 };
+      return { name: 100, col: 44 };
+    }
     if (viewMode === 'day') return { name: 200, col: 200 };
     if (viewMode === 'week') return { name: 180, col: 120 };
     if (viewMode === 'month') return { name: 150, col: 72 };
@@ -290,7 +298,7 @@ const CalendarView = ({ employees, shifts, updateShift, setBatchShifts, autoHoli
       </div>
 
       {/* ═══ CALENDAR GRID ═══ */}
-      <div className="animate-fade-in-up delay-200" style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', borderRadius: 'var(--radius-xl)', border: '1px solid var(--glass-border)', background: 'var(--bg-card)', boxShadow: 'var(--shadow-md)' }}>
+      <div className="animate-fade-in-up delay-200" style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch', display: 'flex', flexDirection: 'column', borderRadius: 'var(--radius-xl)', border: '1px solid var(--glass-border)', background: 'var(--bg-card)', boxShadow: 'var(--shadow-md)' }}>
         <div style={{ overflowX: 'auto', flex: 1 }}>
           <div style={{ display: 'grid', gridTemplateColumns: columns, minWidth: 'max-content' }}>
             {/* Year View Month Header Row (Only in Year View) */}
@@ -316,7 +324,6 @@ const CalendarView = ({ employees, shifts, updateShift, setBatchShifts, autoHoli
               const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
               const holiday = holidays.find(h => h.date === dateStr);
               const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-              const isRedDay = isWeekend || holiday;
               const isToday = dateStr === todayStr;
               return (
                 <div key={i} title={holiday ? `${lang === 'en' ? 'National Holiday' : 'Libur Nasional'}: ${holiday.localName}` : ''} style={{
@@ -353,7 +360,7 @@ const CalendarView = ({ employees, shifts, updateShift, setBatchShifts, autoHoli
               <React.Fragment key={emp.id}>
                 {/* Name Cell */}
                 <div style={{ 
-                  padding: '0.6rem 0.85rem', 
+                  padding: isMobile ? '0.4rem 0.5rem' : '0.6rem 0.85rem', 
                   borderRight: '1px solid var(--glass-border)', 
                   borderBottom: '1px solid var(--glass-border)', 
                   backgroundColor: rowBg, 
@@ -361,11 +368,11 @@ const CalendarView = ({ employees, shifts, updateShift, setBatchShifts, autoHoli
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem',
                   borderLeft: `3px solid ${['var(--shift-pagi-text)', 'var(--shift-sore-text)', 'var(--shift-malam-text)', 'var(--color-secondary)'][empIdx % 4]}`,
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                    <img src={emp.avatar} alt={emp.name} style={{ width: '34px', height: '34px', borderRadius: '10px', border: '2px solid var(--glass-border)', objectFit: 'cover', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.35rem' : '0.65rem' }}>
+                    <img src={emp.avatar} alt={emp.name} style={{ width: isMobile ? '24px' : '34px', height: isMobile ? '24px' : '34px', borderRadius: isMobile ? '6px' : '10px', border: '2px solid var(--glass-border)', objectFit: 'cover', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }} />
                     <div>
-                      <div style={{ fontWeight: '600', fontSize: '0.82rem', color: 'var(--text-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.01em' }}>{emp.name}</div>
-                      <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)', fontWeight: '500', letterSpacing: '0.02em' }}>{emp.role}</div>
+                      <div style={{ fontWeight: '600', fontSize: isMobile ? '0.68rem' : '0.82rem', color: 'var(--text-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: isMobile ? '70px' : 'none' }}>{emp.name}</div>
+                      <div style={{ fontSize: isMobile ? '0.52rem' : '0.62rem', color: 'var(--text-muted)', fontWeight: '500', letterSpacing: '0.02em' }}>{emp.role}</div>
                     </div>
                   </div>
                   {!isViewer && !isEmployee && (

@@ -29,7 +29,7 @@ const ShiftBidding = ({ employees, shifts, openShifts, addOpenShift, updateOpenS
   const handleApply = (id) => {
     sounds.success();
     const shift = openShifts.find(s => s.id === id);
-    if (!shift) return;
+    if (!shift || shift.status === 'closed') return;
     if (shift.applicants.some(a => a.empId === currentEmployeeId)) return;
     updateOpenShift({
       ...shift,

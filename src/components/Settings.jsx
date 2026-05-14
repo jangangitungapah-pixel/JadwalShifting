@@ -57,6 +57,10 @@ const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incen
         if (data.customHolidays) localStorage.setItem('shift_custom_holidays', JSON.stringify(data.customHolidays));
         if (data.leaves) localStorage.setItem('shift_leaves', JSON.stringify(data.leaves));
         if (data.swaps) localStorage.setItem('shift_swaps', JSON.stringify(data.swaps));
+        // Sync restored data to API to prevent polling from overwriting it
+        import('../utils/apiSync.js').then(({ syncAllToApi }) => {
+          syncAllToApi(data).catch(() => {});
+        });
         alert('✅ Data berhasil di-restore! Halaman akan di-refresh.'); window.location.reload();
       } catch { alert('❌ File backup tidak valid.'); }
     };
@@ -101,7 +105,7 @@ const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incen
         <p className="page-subtitle" style={{ marginLeft: '1.75rem' }}>{t('set.subtitle')}</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
         {/* Theme & Language */}
         <div className="glass-card animate-fade-in-up delay-100" style={sectionStyle}>
           {sectionTitle(<Sun size={18} style={{ color: '#FBBF24' }} />, 'Tampilan', '#FBBF24')}
@@ -268,7 +272,7 @@ const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incen
           <input className="input" placeholder="Nama hari libur..." value={newHolidayName} onChange={e => setNewHolidayName(e.target.value)} style={{ fontSize: '0.82rem' }} />
           <button onClick={handleAddHoliday} className="btn btn-primary" style={{ whiteSpace: 'nowrap' }}><Plus size={14} /> Tambah</button>
         </div>
-        <div style={{ maxHeight: '250px', overflowY: 'auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem' }}>
+        <div style={{ maxHeight: '250px', overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.35rem' }}>
           {displayedHolidays.map(h => (
             <div key={h.date + h.localName} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.65rem', borderRadius: 'var(--radius-sm)', background: 'var(--bg-elevated)', border: '1px solid var(--glass-border)' }}>
               <div><span style={{ fontSize: '0.78rem', fontWeight: '600' }}>{h.localName}</span><span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginLeft: '0.5rem' }}>{h.date}</span></div>
@@ -279,10 +283,10 @@ const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incen
       </div>
 
       {/* Backup & Shortcuts */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
         <div className="glass-card animate-fade-in-up delay-400" style={sectionStyle}>
           {sectionTitle(<Database size={18} style={{ color: '#34D399' }} />, 'Backup & Restore', '#34D399')}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
             <button onClick={handleExport} className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '1rem' }}>
               <Download size={18} style={{ color: 'var(--color-primary)' }} />
               <div style={{ textAlign: 'left' }}>
