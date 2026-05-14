@@ -173,7 +173,7 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
       <div className="animate-fade-in-up" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
-            <div style={{ width: '8px', height: '32px', borderRadius: '4px', background: 'linear-gradient(180deg, #22D3EE, var(--color-primary))' }} />
+            <div style={{ width: '8px', height: '32px', borderRadius: '4px', background: 'linear-gradient(180deg, #22D3EE, var(--color-primary))', boxShadow: '0 0 12px rgba(34,211,238,0.3)' }} />
             <h2 className="page-title">{t('emp.title')}</h2>
           </div>
           <p className="page-subtitle" style={{ marginLeft: '1.75rem' }}>{t('emp.subtitle')}</p>
@@ -248,80 +248,90 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
         </div>
       ) : viewMode === 'grid' ? (
         <div className="animate-fade-in-up delay-200" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.25rem' }}>
-          {filteredEmployees.map(emp => {
+          {filteredEmployees.map((emp, idx) => {
             const empFairness = fairness.stats.find(s => s.empId === emp.id);
             const score = empFairness?.fairnessScore || 0;
             const scoreColor = score >= 70 ? '#2DD4BF' : score >= 40 ? '#FBBF24' : '#F87171';
             const isSelected = selectedIds.includes(emp.id);
+            const accentColors = ['#22D3EE', '#818CF8', '#F472B6', '#34D399'];
+            const accent = accentColors[idx % accentColors.length];
 
             return (
-              <div key={emp.id} className="glass-card" style={{ padding: '1.25rem', position: 'relative', overflow: 'hidden', border: isSelected ? '1px solid var(--color-primary)' : '1px solid var(--glass-border-hover)', transition: 'all 0.2s', boxShadow: isSelected ? '0 0 0 2px rgba(99,102,241,0.2)' : 'none', display: 'flex', flexDirection: 'column' }}>
-                {!isViewer && !isEmployee && (
-                  <div style={{ position: 'absolute', top: '1rem', right: '1rem', zIndex: 10 }}>
-                    <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(emp.id)} style={{ width: '1.1rem', height: '1.1rem', cursor: 'pointer', accentColor: 'var(--color-primary)' }} />
-                  </div>
-                )}
-                
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', marginBottom: '1rem' }}>
-                  <img src={emp.avatar} alt={emp.name} style={{ width: '56px', height: '56px', borderRadius: '50%', border: '2px solid var(--glass-border)', background: 'var(--bg-elevated)' }} />
-                  <div style={{ flex: 1, paddingRight: '1.5rem' }}>
-                    <h4 style={{ fontWeight: '700', fontSize: '1.05rem', letterSpacing: '-0.02em', marginBottom: '0.2rem' }}>{emp.name}</h4>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                      <span className="badge badge-primary" style={{ padding: '0.15rem 0.4rem', fontSize: '0.65rem' }}>{emp.role}</span>
-                      {emp.department && emp.department !== 'Umum' && <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', background: 'var(--bg-elevated)', padding: '0.15rem 0.4rem', borderRadius: 'var(--radius-full)' }}>{emp.department}</span>}
+              <div key={emp.id} className="glass-card" style={{ padding: '0', position: 'relative', overflow: 'hidden', border: isSelected ? '1px solid var(--color-primary)' : '1px solid var(--glass-border)', transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)', boxShadow: isSelected ? '0 0 0 2px rgba(99,102,241,0.2)' : 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', borderRadius: 'var(--radius-xl)' }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = `0 12px 24px rgba(0,0,0,0.08)`; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = isSelected ? '0 0 0 2px rgba(99,102,241,0.2)' : 'var(--shadow-sm)'; }}
+              >
+                {/* Colored Top Bar */}
+                <div style={{ height: '4px', background: `linear-gradient(90deg, ${accent}, var(--color-primary))` }} />
+
+                <div style={{ padding: '1.25rem' }}>
+                  {!isViewer && !isEmployee && (
+                    <div style={{ position: 'absolute', top: '1.1rem', right: '1rem', zIndex: 10 }}>
+                      <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(emp.id)} style={{ width: '1.1rem', height: '1.1rem', cursor: 'pointer', accentColor: 'var(--color-primary)' }} />
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', marginBottom: '1rem' }}>
+                    <img src={emp.avatar} alt={emp.name} style={{ width: '56px', height: '56px', borderRadius: '14px', border: '2px solid var(--glass-border)', background: 'var(--bg-elevated)', objectFit: 'cover', boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }} />
+                    <div style={{ flex: 1, paddingRight: '1.5rem' }}>
+                      <h4 style={{ fontWeight: '800', fontSize: '1.05rem', letterSpacing: '-0.02em', marginBottom: '0.2rem', fontFamily: "'Outfit', sans-serif" }}>{emp.name}</h4>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        <span className="badge badge-primary" style={{ padding: '0.15rem 0.5rem', fontSize: '0.65rem', borderRadius: 'var(--radius-full)' }}>{emp.role}</span>
+                        {emp.department && emp.department !== 'Umum' && <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', background: 'var(--bg-elevated)', padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-full)' }}>{emp.department}</span>}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Quick Contacts */}
-                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', minHeight: '28px' }}>
-                  {emp.phone && (
-                    <a href={`tel:${emp.phone}`} className="badge" style={{ background: 'rgba(52,211,153,0.1)', color: '#34D399', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.3rem 0.6rem' }}>
-                      <Phone size={12} /> <span style={{ fontSize: '0.7rem' }}>{emp.phone}</span>
-                    </a>
-                  )}
-                  {emp.email && (
-                    <a href={`mailto:${emp.email}`} className="badge" style={{ background: 'rgba(96,165,250,0.1)', color: '#60A5FA', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.3rem 0.6rem' }}>
-                      <Mail size={12} /> <span style={{ fontSize: '0.7rem' }}>Email</span>
-                    </a>
-                  )}
-                  {!emp.phone && !emp.email && (
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                      <Phone size={12} /> Belum ada kontak
+                  {/* Quick Contacts */}
+                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', minHeight: '28px' }}>
+                    {emp.phone && (
+                      <a href={`tel:${emp.phone}`} style={{ background: 'rgba(52,211,153,0.1)', color: '#34D399', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.3rem 0.6rem', borderRadius: 'var(--radius-full)', fontSize: '0.7rem', fontWeight: '500', transition: 'all 0.2s' }}>
+                        <Phone size={12} /> {emp.phone}
+                      </a>
+                    )}
+                    {emp.email && (
+                      <a href={`mailto:${emp.email}`} style={{ background: 'rgba(96,165,250,0.1)', color: '#60A5FA', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.3rem 0.6rem', borderRadius: 'var(--radius-full)', fontSize: '0.7rem', fontWeight: '500', transition: 'all 0.2s' }}>
+                        <Mail size={12} /> Email
+                      </a>
+                    )}
+                    {!emp.phone && !emp.email && (
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <Phone size={12} /> Belum ada kontak
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Fairness badge */}
+                  <div style={{ background: 'var(--bg-elevated)', padding: '0.75rem', borderRadius: 'var(--radius-lg)', marginBottom: '1rem', flex: 1, border: '1px solid var(--glass-border)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: '600' }}><Zap size={12} /> Skor Keadilan</span>
+                      <span style={{ fontSize: '0.75rem', fontWeight: '800', color: scoreColor, fontFamily: "'Outfit', sans-serif" }}>{score}%</span>
+                    </div>
+                    <div style={{ width: '100%', height: '5px', borderRadius: '3px', background: 'var(--bg-card)', overflow: 'hidden', marginBottom: '0.35rem' }}>
+                      <div style={{ width: `${score}%`, height: '100%', borderRadius: '3px', background: `linear-gradient(90deg, ${scoreColor}, ${score >= 70 ? '#10B981' : score >= 40 ? '#F59E0B' : '#EF4444'})`, transition: 'width 0.5s cubic-bezier(0.16,1,0.3,1)', boxShadow: `0 0 6px ${scoreColor}40` }} />
+                    </div>
+                    <span style={{ fontSize: '0.62rem', fontWeight: '600', color: scoreColor }}>
+                      {score >= 70 ? '● Sangat Baik' : score >= 40 ? '● Perlu Perhatian' : '● Buruk'}
                     </span>
-                  )}
-                </div>
-
-                {/* Fairness badge */}
-                <div style={{ background: 'var(--bg-elevated)', padding: '0.75rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem', flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Zap size={12} /> Skor Keadilan</span>
-                    <span style={{ fontSize: '0.75rem', fontWeight: '700', color: scoreColor }}>{score}%</span>
                   </div>
-                  <div style={{ width: '100%', height: '4px', borderRadius: '2px', background: 'var(--bg-card)', overflow: 'hidden', marginBottom: '0.35rem' }}>
-                    <div style={{ width: `${score}%`, height: '100%', borderRadius: '2px', background: scoreColor, transition: 'width 0.5s' }} />
-                  </div>
-                  <span style={{ fontSize: '0.62rem', fontWeight: '600', color: scoreColor }}>
-                    {score >= 70 ? '● Sangat Baik' : score >= 40 ? '● Perlu Perhatian' : '● Buruk'}
-                  </span>
-                </div>
 
-                {/* Actions */}
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={() => { sounds.modalOpen(); setProfileEmployee(emp); }} className="btn btn-outline" style={{ flex: 1, fontSize: '0.75rem', padding: '0.5rem', color: 'var(--color-secondary)', borderColor: 'rgba(34,211,238,0.2)' }}><UserCircle size={14} /> Profil</button>
-                  {!isViewer && !isEmployee && (
-                    <>
-                      <button onClick={() => openEditModal(emp)} className="btn btn-outline" style={{ padding: '0.5rem', fontSize: '0.75rem' }}><Edit3 size={14} /></button>
-                      {deleteConfirmId === emp.id ? (
-                        <div style={{ display: 'flex', gap: '0.25rem' }}>
-                          <button onClick={() => { sounds.success(); onDelete(emp.id); setDeleteConfirmId(null); }} className="btn btn-danger" style={{ padding: '0.5rem' }}><Check size={14} /></button>
-                          <button onClick={() => { sounds.error(); setDeleteConfirmId(null); }} className="btn btn-outline" style={{ padding: '0.5rem' }}><X size={14} /></button>
-                        </div>
-                      ) : (
-                        <button onClick={() => { sounds.error(); setDeleteConfirmId(emp.id); }} className="btn btn-outline" style={{ padding: '0.5rem', color: 'var(--danger)', borderColor: 'rgba(248,113,113,0.2)' }}><Trash2 size={14} /></button>
-                      )}
-                    </>
-                  )}
+                  {/* Actions */}
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button onClick={() => { sounds.modalOpen(); setProfileEmployee(emp); }} className="btn btn-outline" style={{ flex: 1, fontSize: '0.75rem', padding: '0.5rem', color: 'var(--color-secondary)', borderColor: 'rgba(34,211,238,0.2)', borderRadius: 'var(--radius-full)' }}><UserCircle size={14} /> Profil</button>
+                    {!isViewer && !isEmployee && (
+                      <>
+                        <button onClick={() => openEditModal(emp)} className="btn btn-outline" style={{ padding: '0.5rem', fontSize: '0.75rem', borderRadius: 'var(--radius-full)' }}><Edit3 size={14} /></button>
+                        {deleteConfirmId === emp.id ? (
+                          <div style={{ display: 'flex', gap: '0.25rem' }}>
+                            <button onClick={() => { sounds.success(); onDelete(emp.id); setDeleteConfirmId(null); }} className="btn btn-danger" style={{ padding: '0.5rem', borderRadius: 'var(--radius-full)' }}><Check size={14} /></button>
+                            <button onClick={() => { sounds.error(); setDeleteConfirmId(null); }} className="btn btn-outline" style={{ padding: '0.5rem', borderRadius: 'var(--radius-full)' }}><X size={14} /></button>
+                          </div>
+                        ) : (
+                          <button onClick={() => { sounds.error(); setDeleteConfirmId(emp.id); }} className="btn btn-outline" style={{ padding: '0.5rem', color: 'var(--danger)', borderColor: 'rgba(248,113,113,0.2)', borderRadius: 'var(--radius-full)' }}><Trash2 size={14} /></button>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -329,7 +339,7 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
         </div>
       ) : (
         /* Table View */
-        <div className="glass-card animate-fade-in-up delay-200" style={{ overflowX: 'auto', padding: '0' }}>
+        <div className="glass-card animate-fade-in-up delay-200" style={{ overflowX: 'auto', padding: '0', borderRadius: 'var(--radius-xl)', border: '1px solid var(--glass-border)' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
               <tr style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--glass-border)' }}>
@@ -338,11 +348,11 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
                     <input type="checkbox" checked={selectedIds.length === filteredEmployees.length && filteredEmployees.length > 0} onChange={toggleSelectAll} style={{ width: '1.1rem', height: '1.1rem', cursor: 'pointer', accentColor: 'var(--color-primary)' }} />
                   </th>
                 )}
-                <th style={{ padding: '1rem', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase' }}>Nama</th>
-                <th style={{ padding: '1rem', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase' }}>Posisi</th>
-                <th style={{ padding: '1rem', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase' }}>Kontak</th>
-                <th style={{ padding: '1rem', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase' }}>Skor</th>
-                <th style={{ padding: '1rem', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', textAlign: 'right' }}>Aksi</th>
+                <th style={{ padding: '1rem', fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: "'Outfit', sans-serif" }}>Nama</th>
+                <th style={{ padding: '1rem', fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: "'Outfit', sans-serif" }}>Posisi</th>
+                <th style={{ padding: '1rem', fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: "'Outfit', sans-serif" }}>Kontak</th>
+                <th style={{ padding: '1rem', fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: "'Outfit', sans-serif" }}>Skor</th>
+                <th style={{ padding: '1rem', fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: "'Outfit', sans-serif", textAlign: 'right' }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -353,7 +363,10 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
                 const isSelected = selectedIds.includes(emp.id);
 
                 return (
-                  <tr key={emp.id} style={{ borderBottom: '1px solid var(--glass-border)', background: isSelected ? 'rgba(99,102,241,0.05)' : 'transparent', transition: 'background 0.2s' }}>
+                  <tr key={emp.id} style={{ borderBottom: '1px dashed var(--glass-border)', background: isSelected ? 'rgba(99,102,241,0.05)' : 'transparent', transition: 'all 0.2s cubic-bezier(0.16,1,0.3,1)' }}
+                    onMouseEnter={e => e.currentTarget.style.background = isSelected ? 'rgba(99,102,241,0.08)' : 'var(--bg-card-hover)'}
+                    onMouseLeave={e => e.currentTarget.style.background = isSelected ? 'rgba(99,102,241,0.05)' : 'transparent'}
+                  >
                     {!isViewer && !isEmployee && (
                       <td style={{ padding: '1rem' }}>
                         <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(emp.id)} style={{ width: '1.1rem', height: '1.1rem', cursor: 'pointer', accentColor: 'var(--color-primary)' }} />
@@ -361,13 +374,13 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
                     )}
                     <td style={{ padding: '1rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <img src={emp.avatar} alt={emp.name} style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--bg-elevated)' }} />
-                        <span style={{ fontWeight: '600', fontSize: '0.9rem' }}>{emp.name}</span>
+                        <img src={emp.avatar} alt={emp.name} style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--bg-elevated)', border: '1px solid var(--glass-border)', objectFit: 'cover' }} />
+                        <span style={{ fontWeight: '700', fontSize: '0.9rem', fontFamily: "'Outfit', sans-serif" }}>{emp.name}</span>
                       </div>
                     </td>
                     <td style={{ padding: '1rem' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-start' }}>
-                        <span className="badge badge-primary" style={{ fontSize: '0.65rem', padding: '0.15rem 0.4rem' }}>{emp.role}</span>
+                        <span className="badge badge-primary" style={{ fontSize: '0.65rem', padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-full)' }}>{emp.role}</span>
                         {emp.department && emp.department !== 'Umum' && <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{emp.department}</span>}
                       </div>
                     </td>
@@ -380,19 +393,19 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
                     </td>
                     <td style={{ padding: '1rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <div style={{ width: '40px', height: '4px', borderRadius: '2px', background: 'var(--bg-elevated)' }}>
-                          <div style={{ width: `${score}%`, height: '100%', borderRadius: '2px', background: scoreColor }} />
+                        <div style={{ width: '48px', height: '5px', borderRadius: '3px', background: 'var(--bg-elevated)' }}>
+                          <div style={{ width: `${score}%`, height: '100%', borderRadius: '3px', background: `linear-gradient(90deg, ${scoreColor}, ${score >= 70 ? '#10B981' : score >= 40 ? '#F59E0B' : '#EF4444'})`, boxShadow: `0 0 4px ${scoreColor}40` }} />
                         </div>
-                        <span style={{ fontSize: '0.75rem', fontWeight: '700', color: scoreColor }}>{score}%</span>
+                        <span style={{ fontSize: '0.75rem', fontWeight: '800', color: scoreColor, fontFamily: "'Outfit', sans-serif" }}>{score}%</span>
                       </div>
                     </td>
                     <td style={{ padding: '1rem', textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
-                        <button onClick={() => { sounds.modalOpen(); setProfileEmployee(emp); }} className="btn btn-outline" style={{ padding: '0.4rem' }} title="Profil"><UserCircle size={14} /></button>
+                        <button onClick={() => { sounds.modalOpen(); setProfileEmployee(emp); }} className="btn btn-outline" style={{ padding: '0.4rem', borderRadius: 'var(--radius-full)' }} title="Profil"><UserCircle size={14} /></button>
                         {!isViewer && !isEmployee && (
                           <>
-                            <button onClick={() => openEditModal(emp)} className="btn btn-outline" style={{ padding: '0.4rem' }} title="Edit"><Edit3 size={14} /></button>
-                            <button onClick={() => { sounds.error(); if(window.confirm('Hapus karyawan ini?')) onDelete(emp.id); }} className="btn btn-outline" style={{ padding: '0.4rem', color: 'var(--danger)', borderColor: 'rgba(248,113,113,0.2)' }} title="Hapus"><Trash2 size={14} /></button>
+                            <button onClick={() => openEditModal(emp)} className="btn btn-outline" style={{ padding: '0.4rem', borderRadius: 'var(--radius-full)' }} title="Edit"><Edit3 size={14} /></button>
+                            <button onClick={() => { sounds.error(); if(window.confirm('Hapus karyawan ini?')) onDelete(emp.id); }} className="btn btn-outline" style={{ padding: '0.4rem', color: 'var(--danger)', borderColor: 'rgba(248,113,113,0.2)', borderRadius: 'var(--radius-full)' }} title="Hapus"><Trash2 size={14} /></button>
                           </>
                         )}
                       </div>
