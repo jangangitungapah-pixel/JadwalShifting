@@ -185,11 +185,11 @@ const ShiftBidding = ({ employees, shifts, openShifts, addOpenShift, updateOpenS
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
                 <label className="label">Tanggal</label>
-                <input type="date" className="input" value={formData.dateStr} onChange={e => setFormData({ ...formData, dateStr: e.target.value })} required style={{ colorScheme: 'dark' }} />
+                <input type="date" className="input" value={formData.dateStr} onChange={e => setFormData({ ...formData, dateStr: e.target.value })} required  />
               </div>
               <div>
                 <label className="label">Shift</label>
-                <select className="input" value={formData.shiftId} onChange={e => setFormData({ ...formData, shiftId: e.target.value })} style={{ colorScheme: 'dark' }}>
+                <select className="input" value={formData.shiftId} onChange={e => setFormData({ ...formData, shiftId: e.target.value })} >
                   {allShiftTypes.filter(s => s.id !== 'libur').map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
                 </select>
               </div>
@@ -215,3 +215,4 @@ const ShiftBidding = ({ employees, shifts, openShifts, addOpenShift, updateOpenS
 };
 
 export default ShiftBidding;
+

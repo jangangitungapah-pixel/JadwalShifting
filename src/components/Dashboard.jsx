@@ -88,7 +88,7 @@ const Dashboard = ({ employees, shifts, activityLogs, leaves, swapRequests, isEm
       </div>
 
       {/* Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+      <div data-tour="dashboard-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
         {statCards.map((card, i) => (
           <div key={i} className={`glass-card animate-fade-in-up delay-${(i + 1) * 100}`} style={{ padding: '1.25rem', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: card.glow, filter: 'blur(20px)' }} />
@@ -153,7 +153,7 @@ const Dashboard = ({ employees, shifts, activityLogs, leaves, swapRequests, isEm
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
+      <div data-tour="dashboard-charts" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
         {/* Pie Chart */}
         <div className="glass-card animate-fade-in-up delay-500" style={{ padding: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>

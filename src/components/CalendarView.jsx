@@ -263,25 +263,25 @@ const CalendarView = ({ employees, shifts, updateShift, setBatchShifts, autoHoli
           {/* Actions */}
           {!isEmployee && (
             <div style={{ display: 'flex', gap: '0.25rem', padding: '0.2rem', background: 'var(--bg-card)', borderRadius: 'var(--radius-full)', border: '1px solid var(--glass-border)' }}>
-              <button onClick={() => { setAutoGenSingleEmp(null); sounds.modalOpen(); setAutoGenModalOpen(true); }} style={{ padding: '0.35rem 0.65rem', borderRadius: 'var(--radius-full)', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-primary)', fontSize: '0.7rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.25rem', transition: 'all 0.2s', fontFamily: 'inherit' }}><Wand2 size={12} /> {t('cal.autoGen').split('-')[0]}</button>
+              <button data-tour="calendar-auto-btn" onClick={() => { setAutoGenSingleEmp(null); sounds.modalOpen(); setAutoGenModalOpen(true); }} style={{ padding: '0.35rem 0.65rem', borderRadius: 'var(--radius-full)', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-primary)', fontSize: '0.7rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.25rem', transition: 'all 0.2s', fontFamily: 'inherit' }}><Wand2 size={12} /> {t('cal.autoGen').split('-')[0]}</button>
               <button onClick={() => { sounds.modalOpen(); setBackfillModalOpen(true); }} style={{ padding: '0.35rem 0.65rem', borderRadius: 'var(--radius-full)', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-accent)', fontSize: '0.7rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.25rem', transition: 'all 0.2s', fontFamily: 'inherit' }}><Rewind size={12} /> {t('cal.backfill')}</button>
               <button onClick={() => { sounds.modalOpen(); setTemplateModalOpen(true); }} style={{ padding: '0.35rem', borderRadius: '50%', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-secondary)', display: 'flex' }}><Bookmark size={12} /></button>
             </div>
           )}
-          <button onClick={() => { sounds.modalOpen(); setSwapModalOpen(true); }} className="btn btn-outline" style={{ padding: '0.35rem 0.6rem', color: '#FBBF24', borderColor: 'rgba(251,191,36,0.2)', fontSize: '0.7rem' }}><ArrowLeftRight size={12} />{isEmployee ? ` ${lang === 'en' ? 'Swap' : 'Tukar'}` : ''}</button>
+          <button data-tour="calendar-swap-btn" onClick={() => { sounds.modalOpen(); setSwapModalOpen(true); }} className="btn btn-outline" style={{ padding: '0.35rem 0.6rem', color: '#FBBF24', borderColor: 'rgba(251,191,36,0.2)', fontSize: '0.7rem' }}><ArrowLeftRight size={12} />{isEmployee ? ` ${lang === 'en' ? 'Swap' : 'Tukar'}` : ''}</button>
           {isEmployee && <button onClick={handleExportICS} className="btn btn-outline" style={{ padding: '0.35rem 0.6rem', fontSize: '0.7rem' }}><Download size={12} /> .ics</button>}
           {!isEmployee && (
             <div style={{ display: 'flex', gap: '0.25rem' }}>
               <button onClick={() => { sounds.success(); handleShareWA(); }} className="btn btn-outline" style={{ padding: '0.35rem', borderRadius: '50%' }}><MessageCircle size={12} style={{ color: '#34D399' }} /></button>
               <label className="btn btn-outline" style={{ cursor: 'pointer', padding: '0.35rem', borderRadius: '50%' }}><Upload size={12} style={{ color: 'var(--info)' }} /><input type="file" accept=".xlsx,.xls" onChange={handleImport} style={{ display: 'none' }} /></label>
-              <button onClick={() => { sounds.success(); handleExport(); }} className="btn btn-success" style={{ padding: '0.35rem 0.7rem', fontSize: '0.7rem' }}><Download size={12} /> {t('common.export')}</button>
+              <button data-tour="calendar-export-btn" onClick={() => { sounds.success(); handleExport(); }} className="btn btn-success" style={{ padding: '0.35rem 0.7rem', fontSize: '0.7rem' }}><Download size={12} /> {t('common.export')}</button>
             </div>
           )}
         </div>
       </div>
 
       {/* ═══ LEGEND CHIPS ═══ */}
-      <div className="animate-fade-in-up delay-100" style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+      <div data-tour="calendar-legend" className="animate-fade-in-up delay-100" style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
         {shiftTypes.map(type => (
           <div key={type.id} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.25rem 0.6rem', borderRadius: 'var(--radius-full)', background: `var(--shift-${type.id}-bg)`, border: `1px solid var(--shift-${type.id}-border)` }}>
             <span style={{ fontSize: '0.65rem', fontWeight: '800', color: `var(--shift-${type.id}-text)` }}>{type.shortLabel}</span>
@@ -298,7 +298,7 @@ const CalendarView = ({ employees, shifts, updateShift, setBatchShifts, autoHoli
       </div>
 
       {/* ═══ CALENDAR GRID ═══ */}
-      <div className="animate-fade-in-up delay-200" style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch', display: 'flex', flexDirection: 'column', borderRadius: 'var(--radius-xl)', border: '1px solid var(--glass-border)', background: 'var(--bg-card)', boxShadow: 'var(--shadow-md)' }}>
+      <div data-tour="calendar-grid" className="animate-fade-in-up delay-200" style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch', display: 'flex', flexDirection: 'column', borderRadius: 'var(--radius-xl)', border: '1px solid var(--glass-border)', background: 'var(--bg-card)', boxShadow: 'var(--shadow-md)' }}>
         <div style={{ overflowX: 'auto', flex: 1 }}>
           <div style={{ display: 'grid', gridTemplateColumns: columns, minWidth: 'max-content' }}>
             {/* Year View Month Header Row (Only in Year View) */}

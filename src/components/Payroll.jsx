@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Download, FileText, Printer, DollarSign, Calendar, Info } from 'lucide-react';
-// dummyData not needed here — shift logic is inline
+import { calculateAllPayroll } from '../utils/payrollCalculator';
 import { sounds } from '../utils/soundService';
 import { useTranslation } from '../utils/i18n.jsx';
 
@@ -12,86 +12,8 @@ const Payroll = ({ employees, shifts, cutOffDate, incentiveAmount, holidayIncent
   const monthNames = t('time.months');
 
   const payrollData = useMemo(() => {
-    return employees.map(emp => {
-      let normalShifts = 0;
-      let spShifts = 0;
-      let normalIncentives = 0;
-      let holidayIncentives = 0;
-      let spIncentives = 0;
-
-      // Calculate days based on cutoff
-      const startDate = new Date(selectedYear, selectedMonth - 1, cutOffDate + 1);
-      const endDate = new Date(selectedYear, selectedMonth, cutOffDate);
-      const days = Math.round((endDate - startDate) / (1000 * 60 * 60 * 24));
-
-      for (let i = 0; i <= days; i++) {
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + i);
-        const y = date.getFullYear();
-        const m = date.getMonth();
-        const d = date.getDate();
-        const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        
-        const shiftId = shifts[dateStr]?.[emp.id];
-        if (!shiftId || shiftId === 'libur') continue;
-
-        const isSP = shiftId.includes('sp');
-        const isHoliday = holidays.some(h => h.date === dateStr);
-        
-        const tomorrow = new Date(date);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
-        const isTomorrowHoliday = holidays.some(h => h.date === tomorrowStr);
-
-        if (isSP) spShifts++;
-        else normalShifts++;
-
-        let isEligibleForHolidayIncentive = false;
-        if (shiftId.includes('malam')) {
-          if (isTomorrowHoliday) isEligibleForHolidayIncentive = true;
-        } else if (shiftId.includes('pagi') || shiftId.includes('sore')) {
-          if (isHoliday) isEligibleForHolidayIncentive = true;
-        }
-
-        if (isEligibleForHolidayIncentive) {
-          holidayIncentives += holidayIncentiveAmount;
-        }
-
-        if (isSP) {
-          spIncentives += spIncentiveAmount;
-          if (shiftId.includes('sore')) normalIncentives += incentiveAmount;
-          if (shiftId.includes('malam')) normalIncentives += incentiveAmount;
-        } else {
-          if (shiftId === 'sore' || shiftId === 'malam') {
-            normalIncentives += incentiveAmount;
-          }
-        }
-      }
-
-      const baseSalaryMonthly = emp.projectType === 'new' ? 2800000 : 2300000;
-      const baseSalaryNormal = baseSalaryMonthly;
-      const fixedAllowance = 700000;
-      const materialAllowance = emp.materialAllowance || 0;
-
-      const totalIncentives = normalIncentives + holidayIncentives + spIncentives;
-      const totalSalary = baseSalaryNormal + fixedAllowance + materialAllowance + totalIncentives;
-
-      return {
-        ...emp,
-        baseSalaryMonthly,
-        fixedAllowance,
-        materialAllowance,
-        normalShifts,
-        spShifts,
-        baseSalaryNormal,
-
-        normalIncentives,
-        holidayIncentives,
-        spIncentives,
-        totalIncentives,
-        totalSalary
-      };
-    });
+    const settings = { incentiveAmount, holidayIncentiveAmount, spIncentiveAmount };
+    return calculateAllPayroll(employees, shifts, selectedYear, selectedMonth, cutOffDate, settings, holidays);
   }, [employees, shifts, selectedMonth, selectedYear, cutOffDate, incentiveAmount, holidayIncentiveAmount, spIncentiveAmount, holidays]);
 
   const handlePrint = () => {
@@ -134,7 +56,7 @@ const Payroll = ({ employees, shifts, cutOffDate, incentiveAmount, holidayIncent
         </div>
       </div>
 
-      <div className="animate-fade-in-up delay-200" style={{ display: 'grid', gap: '1rem' }}>
+      <div data-tour="payroll-table" className="animate-fade-in-up delay-200" style={{ display: 'grid', gap: '1rem' }}>
         {payrollData.map((data, idx) => (
           <div key={data.id} className="glass-card" style={{ padding: '1.5rem', position: 'relative' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem', marginBottom: '1rem' }}>

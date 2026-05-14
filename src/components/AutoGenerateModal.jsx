@@ -103,10 +103,10 @@ const AutoGenerateModal = ({ onClose, onGenerate, employees, monthNames }) => {
           </div>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.65rem' }}>
             <div>
-              <input type="date" className="input" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ colorScheme:'dark', fontSize:'0.82rem' }} />
+              <input type="date" className="input" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ fontSize:'0.82rem' }} />
             </div>
             <div>
-              <input type="date" className="input" value={endDate} onChange={e => setEndDate(e.target.value)} style={{ colorScheme:'dark', fontSize:'0.82rem' }} />
+              <input type="date" className="input" value={endDate} onChange={e => setEndDate(e.target.value)} style={{ fontSize:'0.82rem' }} />
             </div>
           </div>
           {isValid && (
@@ -210,7 +210,7 @@ const AutoGenerateModal = ({ onClose, onGenerate, employees, monthNames }) => {
           </div>
           {targetMode === 'single' && (
             <div className="animate-fade-in-scale" style={{ position:'relative' }}>
-              <select value={selectedEmployee} onChange={e => setSelectedEmployee(e.target.value)} className="input" style={{ appearance:'none', cursor:'pointer', paddingRight:'2rem', colorScheme:'dark', fontSize:'0.82rem' }}>
+              <select value={selectedEmployee} onChange={e => setSelectedEmployee(e.target.value)} className="input" style={{ appearance:'none', cursor:'pointer', paddingRight:'2rem', fontSize:'0.82rem' }}>
                 {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name} — {emp.role}</option>)}
               </select>
               <div style={{ position:'absolute', right:'0.75rem', top:'50%', transform:'translateY(-50%)', color:'var(--text-muted)', pointerEvents:'none' }}>▾</div>
@@ -237,3 +237,4 @@ const AutoGenerateModal = ({ onClose, onGenerate, employees, monthNames }) => {
 };
 
 export default AutoGenerateModal;
+

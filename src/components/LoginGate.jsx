@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Lock, Eye, EyeOff, Shield, User } from 'lucide-react';
 import { sounds } from '../utils/soundService';
+import { hashPin, verifyPin } from '../utils/storage';
 
 const LoginGate = ({ children, onLogin, employees }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -30,7 +31,7 @@ const LoginGate = ({ children, onLogin, employees }) => {
   // Show login screen if explicitly logged out, or if login is enabled and not authenticated
   if ((!loginEnabled && !explicitlyLoggedOut) || isAuthenticated) return children;
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     
     if (role === 'employee') {
@@ -46,7 +47,21 @@ const LoginGate = ({ children, onLogin, employees }) => {
       setIsAuthenticated(true);
       if (onLogin) onLogin('employee');
     } else {
-      if (pin === storedPin) {
+      // Support both legacy plain-text PINs and hashed PINs
+      let isValid = false;
+      if (storedPin.length === 64) {
+        // Hashed PIN (SHA-256 = 64 hex chars)
+        isValid = await verifyPin(pin, storedPin);
+      } else {
+        // Legacy plain-text PIN — verify and auto-migrate to hash
+        isValid = pin === storedPin;
+        if (isValid) {
+          const hashed = await hashPin(pin);
+          localStorage.setItem('shift_login_pin', hashed);
+        }
+      }
+      
+      if (isValid) {
         sounds.success();
         sessionStorage.setItem('shift_auth', 'true');
         sessionStorage.setItem('shift_role', role);

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Calendar, Users, FileText, BarChart3, Settings, CalendarOff, Sparkles, DollarSign, ClipboardList, MoreHorizontal, Sun, Moon, Globe, LogOut, X } from 'lucide-react';
+import { LayoutDashboard, Calendar, Users, FileText, BarChart3, Settings, CalendarOff, Sparkles, DollarSign, ClipboardList, MoreHorizontal, Sun, Moon, Globe, LogOut, X, HelpCircle } from 'lucide-react';
 import { useTranslation } from '../utils/i18n.jsx';
 
-const MobileNav = ({ activeTab, setActiveTab, theme, toggleTheme, isViewer, isEmployee, onLogout }) => {
+const MobileNav = ({ activeTab, setActiveTab, theme, toggleTheme, isViewer, isEmployee, onLogout, onStartTutorial }) => {
   const [showMore, setShowMore] = useState(false);
   const { lang, setLanguage, t } = useTranslation();
 
@@ -58,6 +58,10 @@ const MobileNav = ({ activeTab, setActiveTab, theme, toggleTheme, isViewer, isEm
           ))}
           
           {/* Theme & Language in More menu */}
+          <button onClick={() => { onStartTutorial && onStartTutorial(); setShowMore(false); }} style={{ color: 'var(--color-primary)' }}>
+            <HelpCircle size={18} />
+            <span>{lang === 'id' ? 'Mulai Tur' : 'Start Tour'}</span>
+          </button>
           <button onClick={() => { toggleTheme(); }}>
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>

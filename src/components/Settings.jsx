@@ -4,6 +4,7 @@ import { getVersions, restoreVersion, deleteVersion, saveVersion } from '../util
 import { keyboardShortcuts } from '../utils/dummyData';
 import { sounds } from '../utils/soundService';
 import { useTranslation } from '../utils/i18n.jsx';
+import { hashPin } from '../utils/storage';
 
 const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incentiveAmount, holidayIncentiveAmount, spIncentiveAmount, updateSettings, allHolidays, onAddHoliday, onDeleteHoliday, theme, toggleTheme, departments, updateDepartments, notificationsEnabled, toggleNotifications, shifts, syncStatus, forceSync, geminiApiKey, setGeminiApiKey }) => {
   const { t, lang } = useTranslation();
@@ -18,7 +19,7 @@ const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incen
   const [versions, setVersions] = useState([]);
   const [newDept, setNewDept] = useState('');
   const [loginEnabled, setLoginEnabled] = useState(() => localStorage.getItem('shift_login_enabled') === 'true');
-  const [loginPin, setLoginPin] = useState(() => localStorage.getItem('shift_login_pin') || '');
+  const [loginPin, setLoginPin] = useState('');
   const [autoBackup, setAutoBackup] = useState(() => localStorage.getItem('shift_auto_backup') !== 'false');
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -75,7 +76,14 @@ const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incen
     if (!loginEnabled && !loginPin) { sounds.error(); alert('Set PIN terlebih dahulu!'); return; }
     const v = !loginEnabled; setLoginEnabled(v); localStorage.setItem('shift_login_enabled', v.toString());
   };
-  const handlePinSave = () => { sounds.success(); localStorage.setItem('shift_login_pin', loginPin); alert('PIN disimpan!'); };
+  const handlePinSave = async () => {
+    if (!loginPin || loginPin.length < 4) { sounds.error(); alert('PIN minimal 4 karakter!'); return; }
+    const hashed = await hashPin(loginPin);
+    localStorage.setItem('shift_login_pin', hashed);
+    sounds.success();
+    alert('PIN disimpan!');
+    setLoginPin('');
+  };
   const handleAutoBackupToggle = () => { const v = !autoBackup; setAutoBackup(v); localStorage.setItem('shift_auto_backup', v.toString()); };
 
   const addDept = () => { if (newDept.trim() && !departments.includes(newDept.trim())) { sounds.success(); updateDepartments([...departments, newDept.trim()]); setNewDept(''); } };
@@ -126,7 +134,7 @@ const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incen
         </div>
 
         {/* Incentive Settings */}
-        <div className="glass-card animate-fade-in-up delay-200" style={{ padding: '1.5rem' }}>
+        <div data-tour="settings-incentive" className="glass-card animate-fade-in-up delay-200" style={{ padding: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--glass-border)' }}>
             <div style={{ padding: '0.65rem', borderRadius: 'var(--radius-lg)', background: 'var(--color-accent-glow)', color: 'var(--color-accent)' }}><DollarSign size={20} /></div>
             <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>{t('set.incentive')}</h3>
@@ -268,7 +276,7 @@ const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incen
       <div className="glass-card animate-fade-in-up delay-300" style={sectionStyle}>
         {sectionTitle(<Calendar size={18} style={{ color: '#F87171' }} />, `Hari Libur Nasional & Custom (${displayedHolidays.length})`, '#F87171')}
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-          <input type="date" className="input" value={newHolidayDate} onChange={e => setNewHolidayDate(e.target.value)} style={{ colorScheme: 'dark', maxWidth: '180px', fontSize: '0.82rem' }} />
+          <input type="date" className="input" value={newHolidayDate} onChange={e => setNewHolidayDate(e.target.value)} style={{ maxWidth: '180px', fontSize: '0.82rem' }} />
           <input className="input" placeholder="Nama hari libur..." value={newHolidayName} onChange={e => setNewHolidayName(e.target.value)} style={{ fontSize: '0.82rem' }} />
           <button onClick={handleAddHoliday} className="btn btn-primary" style={{ whiteSpace: 'nowrap' }}><Plus size={14} /> Tambah</button>
         </div>
@@ -284,7 +292,7 @@ const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incen
 
       {/* Backup & Shortcuts */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
-        <div className="glass-card animate-fade-in-up delay-400" style={sectionStyle}>
+        <div data-tour="settings-backup" className="glass-card animate-fade-in-up delay-400" style={sectionStyle}>
           {sectionTitle(<Database size={18} style={{ color: '#34D399' }} />, 'Backup & Restore', '#34D399')}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
             <button onClick={handleExport} className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '1rem' }}>
@@ -366,3 +374,4 @@ const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incen
 };
 
 export default SettingsView;
+

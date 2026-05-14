@@ -64,7 +64,7 @@ const EmployeeProfile = ({ employee, onClose, onUpdate, shifts }) => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div><label className="label"><Phone size={12} style={{ display: 'inline', marginRight: '0.3rem', verticalAlign: 'middle' }} />Telepon</label><input className="input" value={editData.phone} onChange={e => setEditData({ ...editData, phone: e.target.value })} placeholder="08xxx" /></div>
             <div><label className="label"><Mail size={12} style={{ display: 'inline', marginRight: '0.3rem', verticalAlign: 'middle' }} />Email</label><input className="input" value={editData.email} onChange={e => setEditData({ ...editData, email: e.target.value })} placeholder="email@example.com" /></div>
-            <div><label className="label"><Calendar size={12} style={{ display: 'inline', marginRight: '0.3rem', verticalAlign: 'middle' }} />Tanggal Bergabung</label><input type="date" className="input" value={editData.joinDate} onChange={e => setEditData({ ...editData, joinDate: e.target.value })} style={{ colorScheme: 'dark' }} /></div>
+            <div><label className="label"><Calendar size={12} style={{ display: 'inline', marginRight: '0.3rem', verticalAlign: 'middle' }} />Tanggal Bergabung</label><input type="date" className="input" value={editData.joinDate} onChange={e => setEditData({ ...editData, joinDate: e.target.value })}  /></div>
           </div>
         )}
 
@@ -158,3 +158,4 @@ const EmployeeProfile = ({ employee, onClose, onUpdate, shifts }) => {
 };
 
 export default EmployeeProfile;
+

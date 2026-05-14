@@ -80,18 +80,29 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
     setIsModalOpen(true); 
   };
 
+  const [formError, setFormError] = useState('');
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.role) return;
+    setFormError('');
+    
+    // Validation
+    const name = formData.name.trim();
+    if (!name || name.length < 2) { setFormError('Nama harus minimal 2 karakter.'); sounds.error(); return; }
+    if (!formData.role.trim()) { setFormError('Jabatan/Role wajib diisi.'); sounds.error(); return; }
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) { setFormError('Format email tidak valid.'); sounds.error(); return; }
+    if (formData.phone && !/^[0-9+\-\s()]{8,15}$/.test(formData.phone)) { setFormError('Format nomor telepon tidak valid.'); sounds.error(); return; }
+    if (formData.materialAllowance < 0) { setFormError('Tunjangan material tidak boleh negatif.'); sounds.error(); return; }
+    
     try {
-      if (editingEmployee) onEdit({ ...editingEmployee, ...formData });
-      else onAdd(formData);
+      if (editingEmployee) onEdit({ ...editingEmployee, ...formData, name });
+      else onAdd({ ...formData, name });
       sounds.success();
       sounds.modalClose();
-      setIsModalOpen(false); resetForm();
+      setIsModalOpen(false); resetForm(); setFormError('');
     } catch (err) {
       console.error(err);
-      alert('Gagal menyimpan data karyawan. Ukuran memori penuh atau terjadi kesalahan: ' + err.message);
+      setFormError('Gagal menyimpan: ' + err.message);
     }
   };
 
@@ -174,13 +185,13 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
                 <Trash2 size={16} /> {lang === 'en' ? `Delete (${selectedIds.length})` : `Hapus (${selectedIds.length})`}
               </button>
             )}
-            <button onClick={openAddModal} className="btn btn-primary"><Plus size={17} /> {t('emp.add')}</button>
+            <button data-tour="emp-add-btn" onClick={openAddModal} className="btn btn-primary"><Plus size={17} /> {t('emp.add')}</button>
           </div>
         )}
       </div>
 
       {/* Toolbar */}
-      <div className="animate-fade-in-up delay-100 glass-card" style={{ padding: '0.75rem 1rem', marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div data-tour="emp-toolbar" className="animate-fade-in-up delay-100 glass-card" style={{ padding: '0.75rem 1rem', marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flex: 1, minWidth: '300px' }}>
           <div style={{ position: 'relative', flex: 1, maxWidth: '380px' }}>
             <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
@@ -206,21 +217,21 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
         <div className="animate-fade-in glass-card" style={{ padding: '1rem', marginBottom: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
           <div>
             <label className="label" style={{ fontSize: '0.75rem' }}>Departemen</label>
-            <select className="input" value={filterDept} onChange={e => setFilterDept(e.target.value)} style={{ padding: '0.5rem', colorScheme: 'dark' }}>
+            <select className="input" value={filterDept} onChange={e => setFilterDept(e.target.value)} style={{ padding: '0.5rem' }}>
               <option value="All">Semua Departemen</option>
               {departments?.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
           <div>
             <label className="label" style={{ fontSize: '0.75rem' }}>Role / Jabatan</label>
-            <select className="input" value={filterRole} onChange={e => setFilterRole(e.target.value)} style={{ padding: '0.5rem', colorScheme: 'dark' }}>
+            <select className="input" value={filterRole} onChange={e => setFilterRole(e.target.value)} style={{ padding: '0.5rem' }}>
               <option value="All">Semua Role</option>
               {roles.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
           <div>
             <label className="label" style={{ fontSize: '0.75rem' }}>Tipe Project</label>
-            <select className="input" value={filterProject} onChange={e => setFilterProject(e.target.value)} style={{ padding: '0.5rem', colorScheme: 'dark' }}>
+            <select className="input" value={filterProject} onChange={e => setFilterProject(e.target.value)} style={{ padding: '0.5rem' }}>
               <option value="All">Semua Project</option>
               <option value="old">Old Project</option>
               <option value="new">New Project</option>
@@ -452,7 +463,7 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
               </div>
               <div>
                 <label className="label">{lang === 'en' ? 'Project Type' : 'Tipe Project'}</label>
-                <select className="input" value={formData.projectType} onChange={e => setFormData({ ...formData, projectType: e.target.value })} style={{ colorScheme: 'dark' }}>
+                <select className="input" value={formData.projectType} onChange={e => setFormData({ ...formData, projectType: e.target.value })} >
                   <option value="old">Old Project (Rp 2.300.000/bln)</option>
                   <option value="new">New Project (Rp 2.800.000/bln)</option>
                 </select>
@@ -462,9 +473,10 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
                 <input className="input" type="number" value={formData.materialAllowance} onChange={e => setFormData({ ...formData, materialAllowance: parseInt(e.target.value) || 0 })} placeholder="0" />
               </div>
               {departments && departments.length > 1 && (
-                <div><label className="label">Departemen</label><select className="input" value={formData.department} onChange={e => setFormData({ ...formData, department: e.target.value })} style={{ colorScheme: 'dark' }}>{departments.map(d => <option key={d} value={d}>{d}</option>)}</select></div>
+                <div><label className="label">Departemen</label><select className="input" value={formData.department} onChange={e => setFormData({ ...formData, department: e.target.value })} >{departments.map(d => <option key={d} value={d}>{d}</option>)}</select></div>
               )}
             </div>
+            {formError && <p style={{ fontSize: '0.8rem', color: 'var(--danger)', background: 'var(--danger-bg)', padding: '0.6rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(248,113,113,0.2)', marginTop: '0.75rem' }}>{formError}</p>}
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
               <button type="button" onClick={() => { sounds.modalClose(); setIsModalOpen(false); }} className="btn btn-outline" style={{ flex: 1 }}>{t('common.cancel')}</button>
               <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>{editingEmployee ? t('common.save') : t('common.add')}</button>
@@ -480,3 +492,4 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
 };
 
 export default EmployeeList;
+

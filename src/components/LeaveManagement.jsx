@@ -86,24 +86,24 @@ const LeaveManagement = ({ employees, leaves, onAddLeave, onUpdateLeave, shifts,
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div>
               <label className="label">{t('cal.employee')}</label>
-              <select className="input" value={formData.empId} onChange={e => setFormData({ ...formData, empId: e.target.value })} required style={{ colorScheme: 'dark' }}>
+              <select className="input" value={formData.empId} onChange={e => setFormData({ ...formData, empId: e.target.value })} required >
                 <option value="">{lang === 'en' ? 'Select employee...' : 'Pilih karyawan...'}</option>
                 {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
               </select>
             </div>
             <div>
               <label className="label">{t('leave.type')}</label>
-              <select className="input" value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })} style={{ colorScheme: 'dark' }}>
+              <select className="input" value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })} >
                 {leaveTypes.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
               </select>
             </div>
             <div>
               <label className="label">{lang === 'en' ? 'Start Date' : 'Tanggal Mulai'}</label>
-              <input type="date" className="input" value={formData.startDate} onChange={e => setFormData({ ...formData, startDate: e.target.value })} required style={{ colorScheme: 'dark' }} />
+              <input type="date" className="input" value={formData.startDate} onChange={e => setFormData({ ...formData, startDate: e.target.value })} required  />
             </div>
             <div>
               <label className="label">{lang === 'en' ? 'End Date' : 'Tanggal Selesai'}</label>
-              <input type="date" className="input" value={formData.endDate} onChange={e => setFormData({ ...formData, endDate: e.target.value })} required style={{ colorScheme: 'dark' }} />
+              <input type="date" className="input" value={formData.endDate} onChange={e => setFormData({ ...formData, endDate: e.target.value })} required  />
             </div>
           </div>
           <div style={{ marginTop: '1rem' }}>
@@ -163,3 +163,4 @@ const LeaveManagement = ({ employees, leaves, onAddLeave, onUpdateLeave, shifts,
 };
 
 export default LeaveManagement;
+

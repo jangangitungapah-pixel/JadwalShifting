@@ -180,7 +180,7 @@ const Reports = ({ employees, shifts, cutOffDate, incentiveAmount, holidayIncent
   };
 
   return (
-    <div style={{ padding: '0.5rem' }}>
+    <div data-tour="reports-content" style={{ padding: '0.5rem' }}>
       <div className="animate-fade-in-up" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
@@ -190,10 +190,10 @@ const Reports = ({ employees, shifts, cutOffDate, incentiveAmount, holidayIncent
           <p className="page-subtitle" style={{ marginLeft: '1.75rem' }}>{t('rpt.subtitle')}</p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <select className="input" value={selectedMonth} onChange={e => setSelectedMonth(+e.target.value)} style={{ width: 'auto', colorScheme: 'dark', fontSize: '0.82rem' }}>
+          <select className="input" value={selectedMonth} onChange={e => setSelectedMonth(+e.target.value)} style={{ width: 'auto', fontSize: '0.82rem' }}>
             {monthNames.map((m, i) => <option key={i} value={i}>{m}</option>)}
           </select>
-          <select className="input" value={selectedYear} onChange={e => setSelectedYear(+e.target.value)} style={{ width: '90px', colorScheme: 'dark', fontSize: '0.82rem' }}>
+          <select className="input" value={selectedYear} onChange={e => setSelectedYear(+e.target.value)} style={{ width: '90px', fontSize: '0.82rem' }}>
             {[selectedYear - 1, selectedYear, selectedYear + 1].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
           <button onClick={() => setMultiMonth(!multiMonth)} className={`btn ${multiMonth ? 'btn-primary' : 'btn-outline'}`} style={{ fontSize: '0.75rem' }}>Multi</button>
@@ -364,3 +364,4 @@ const Reports = ({ employees, shifts, cutOffDate, incentiveAmount, holidayIncent
 };
 
 export default Reports;
+

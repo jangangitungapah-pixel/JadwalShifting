@@ -15,12 +15,49 @@ import Payroll from './components/Payroll';
 import ShiftBidding from './components/ShiftBidding';
 import AIChatbot from './components/AIChatbot';
 import MobileNav from './components/MobileNav';
+import TutorialOverlay from './components/TutorialOverlay';
+import ErrorBoundary from './components/ErrorBoundary';
 import { initialEmployees, initialShifts } from './utils/dummyData';
 import { createUndoManager } from './utils/undoManager';
 import { saveVersion, startAutoBackup, stopAutoBackup } from './utils/versionHistory';
 import { requestNotificationPermission, notifyScheduleChange } from './utils/notifications';
 import { sounds } from './utils/soundService';
 import './App.css';
+
+const tutorialSteps = [
+  // 1. Welcome
+  { tab: null, target: null, title: '👋 Selamat Datang di ShiftSync!', content: 'Aplikasi penjadwalan shift cerdas untuk tim Anda. Mari kita pelajari semua fitur unggulannya dalam beberapa langkah singkat.' },
+  // 2. Sidebar Navigation
+  { tab: 'dashboard', target: '[data-tour="sidebar-nav"]', title: '📌 Menu Navigasi', content: 'Gunakan menu di sebelah kiri ini untuk berpindah antar halaman: Dashboard, Jadwal, Karyawan, Payroll, Laporan, dan lainnya.' },
+  // 3. Dashboard Stats
+  { tab: 'dashboard', target: '[data-tour="dashboard-stats"]', title: '📊 Statistik Harian', content: 'Kartu-kartu ini menampilkan ringkasan real-time: jumlah karyawan, yang bekerja hari ini, yang libur, dan jumlah Long Shift bulan ini.' },
+  // 4. Dashboard Charts
+  { tab: 'dashboard', target: '[data-tour="dashboard-charts"]', title: '📈 Grafik & Aktivitas', content: 'Di sini terdapat grafik distribusi shift dan log aktivitas terbaru. Semua perubahan data akan tercatat secara otomatis.' },
+  // 5. Employee Add
+  { tab: 'employees', target: '[data-tour="emp-add-btn"]', title: '➕ Tambah Karyawan', content: 'Langkah pertama: Klik tombol ini untuk menambahkan anggota tim Anda. Lengkapi nama, jabatan, departemen, dan foto profil.' },
+  // 6. Employee Search & Filter
+  { tab: 'employees', target: '[data-tour="emp-toolbar"]', title: '🔍 Cari & Filter', content: 'Gunakan kolom pencarian untuk menemukan karyawan dengan cepat. Anda juga bisa memfilter berdasarkan departemen, jabatan, atau tipe project.' },
+  // 7. Calendar Legend
+  { tab: 'calendar', target: '[data-tour="calendar-legend"]', title: '🎨 Kode Warna Shift', content: 'Setiap jenis shift memiliki warna berbeda: P (Pagi), S (Siang/Sore), M (Malam), X (Libur), dan SP (Long Shift 12 jam). Hafalkan kode ini!' },
+  // 8. Calendar Grid
+  { tab: 'calendar', target: '[data-tour="calendar-grid"]', title: '📅 Tabel Jadwal Utama', content: 'Ini adalah kanvas utama Anda. Klik sel mana saja untuk mengubah shift karyawan pada tanggal tertentu. Anda juga bisa melihat mode Hari, Minggu, Bulan, atau Tahun.' },
+  // 9. Auto-Generate
+  { tab: 'calendar', target: '[data-tour="calendar-auto-btn"]', title: '🤖 Auto-Generate Jadwal', content: 'Fitur andalan! Sistem akan menyusun jadwal seluruh karyawan secara otomatis dengan memperhatikan keadilan distribusi shift dan aturan libur nasional.' },
+  // 10. Swap & Export
+  { tab: 'calendar', target: '[data-tour="calendar-swap-btn"]', title: '🔄 Tukar Shift & Ekspor', content: 'Karyawan bisa mengajukan tukar shift di sini. Anda juga bisa mengekspor jadwal ke file Excel (.xlsx) atau membagikannya via WhatsApp.' },
+  // 11. Calendar Export
+  { tab: 'calendar', target: '[data-tour="calendar-export-btn"]', title: '📤 Ekspor ke Excel', content: 'Klik tombol hijau Export untuk mengunduh jadwal dalam format Excel. Sangat berguna untuk distribusi ke tim atau cetak fisik.' },
+  // 12. Payroll
+  { tab: 'payroll', target: '[data-tour="payroll-table"]', title: '💰 Estimasi Penggajian', content: 'Gaji pokok dan insentif (shift malam, hari libur, long shift) dihitung otomatis berdasarkan data jadwal. Pilih bulan dan tahun untuk melihat rinciannya.' },
+  // 13. Reports & Analytics
+  { tab: 'reports', target: '[data-tour="reports-content"]', title: '📋 Laporan Lengkap', content: 'Halaman ini menyajikan laporan detail per karyawan: jumlah shift, insentif, dan ringkasan bulanan yang siap cetak.' },
+  // 14. Settings Incentive
+  { tab: 'settings', target: '[data-tour="settings-incentive"]', title: '⚙️ Pengaturan Insentif', content: 'Atur tanggal Cut-Off gaji dan nominal insentif untuk shift biasa, hari libur, dan Long Shift (SP) sesuai kebijakan perusahaan Anda.' },
+  // 15. Settings Backup
+  { tab: 'settings', target: '[data-tour="settings-backup"]', title: '💾 Backup & Restore', content: 'PENTING! Semua data tersimpan di perangkat Anda (offline-first). Rutin klik Export Data untuk membuat cadangan, dan gunakan Restore untuk memulihkannya.' },
+  // 16. Conclusion
+  { tab: null, target: null, title: '🎉 Anda Sudah Siap!', content: 'Selamat! Anda telah menguasai semua fitur utama ShiftSync. Klik tombol "Tur" di sidebar kapan saja untuk mengulang panduan ini. Selamat bekerja!' }
+];
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -37,6 +74,7 @@ function App() {
   const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem('shift_gemini_key') || '');
   const [syncStatus, setSyncStatus] = useState('offline'); // 'synced' | 'syncing' | 'offline'
   const firebaseListenerRef = useRef(false); // prevent re-entrant updates
+  const [tutorialState, setTutorialState] = useState({ isActive: false, currentStep: 0 });
 
   const [autoHolidayEnabled, setAutoHolidayEnabled] = useState(() => {
     const saved = localStorage.getItem('shift_auto_holiday');
@@ -157,8 +195,53 @@ function App() {
         setTimeout(() => { firebaseListenerRef.current = false; }, 500);
       });
 
+    // Check for tutorial
+    if (!localStorage.getItem('shift_tutorial_done') && !sessionStorage.getItem('shift_role')) {
+      // Don't show tutorial if not logged in yet, but we check after login.
+      // Actually, LoginGate hides the app, so it's safe to just set it here.
+      // Wait, let's defer it until we know role.
+    }
+
     return () => { stopAutoBackup(); unsub(); };
   }, []);
+
+  useEffect(() => {
+    if (sessionStorage.getItem('shift_auth') === 'true' && !localStorage.getItem('shift_tutorial_done')) {
+      setTimeout(() => setTutorialState({ isActive: true, currentStep: 0 }), 500);
+    }
+  }, []);
+
+  const nextTutorialStep = () => {
+    setTutorialState(prev => {
+      const nextStep = prev.currentStep + 1;
+      if (nextStep >= tutorialSteps.length) {
+        localStorage.setItem('shift_tutorial_done', 'true');
+        return { isActive: false, currentStep: 0 };
+      }
+      const targetTab = tutorialSteps[nextStep].tab;
+      if (targetTab && targetTab !== activeTab) setActiveTab(targetTab);
+      return { isActive: true, currentStep: nextStep };
+    });
+  };
+
+  const prevTutorialStep = () => {
+    setTutorialState(prev => {
+      const prevStep = Math.max(0, prev.currentStep - 1);
+      const targetTab = tutorialSteps[prevStep].tab;
+      if (targetTab && targetTab !== activeTab) setActiveTab(targetTab);
+      return { isActive: true, currentStep: prevStep };
+    });
+  };
+
+  const closeTutorial = () => {
+    localStorage.setItem('shift_tutorial_done', 'true');
+    setTutorialState({ isActive: false, currentStep: 0 });
+  };
+  
+  const startTutorial = () => {
+    setTutorialState({ isActive: true, currentStep: 0 });
+    setActiveTab('dashboard');
+  };
 
   // Keyboard shortcuts (refs declared here, assigned after handleUndo/handleRedo below)
   const handleUndoRef = React.useRef();
@@ -438,10 +521,11 @@ function App() {
   return (
     <LoginGate employees={employees}>
       <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} theme={theme} toggleTheme={toggleTheme} syncStatus={syncStatus} forceSync={forceSync} isViewer={isViewer} isEmployee={isEmployee} onLogout={handleLogout} />
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} theme={theme} toggleTheme={toggleTheme} syncStatus={syncStatus} forceSync={forceSync} isViewer={isViewer} isEmployee={isEmployee} onLogout={handleLogout} onStartTutorial={startTutorial} />
         <main style={{ flex: 1, marginLeft: '17.5rem', overflowY: 'auto', position: 'relative', padding: '1.25rem' }}>
           <div className="orb orb-1" /><div className="orb orb-2" /><div className="orb orb-3" />
           <div key={activeTab} className="animate-fade-in-up main-content-wrapper" style={{ position: 'relative', zIndex: 1, minHeight: '100%' }}>
+            <ErrorBoundary key={activeTab + '-eb'}>
             {activeTab === 'dashboard' && <Dashboard employees={employees} shifts={shifts} activityLogs={activityLogs} leaves={leaves} swapRequests={swapRequests} isEmployee={isEmployee} currentEmployeeId={currentEmployeeId} />}
             {activeTab === 'employees' && <EmployeeList employees={employees} onAdd={addEmployee} onEdit={editEmployee} onDelete={deleteEmployee} shifts={shifts} departments={departments} isViewer={isViewer} isEmployee={isEmployee} currentEmployeeId={currentEmployeeId} />}
             {activeTab === 'calendar' && <CalendarView employees={employees} shifts={shifts} updateShift={updateShift} setBatchShifts={setBatchShifts} autoHolidayEnabled={autoHolidayEnabled} holidays={allHolidays} canUndo={canUndo} canRedo={canRedo} onUndo={handleUndo} onRedo={handleRedo} notes={notes} updateNote={updateNote} swapRequests={swapRequests} onAddSwapRequest={addSwapRequest} onResolveSwap={resolveSwap} isViewer={isViewer} isEmployee={isEmployee} currentEmployeeId={currentEmployeeId} />}
@@ -452,11 +536,21 @@ function App() {
             {activeTab === 'leave' && <LeaveManagement employees={employees} leaves={leaves} onAddLeave={addLeave} onUpdateLeave={updateLeave} shifts={shifts} setBatchShifts={setBatchShifts} />}
             {activeTab === 'audit' && <AuditLog logs={activityLogs} />}
             {activeTab === 'settings' && <SettingsView autoHolidayEnabled={autoHolidayEnabled} toggleAutoHoliday={toggleAutoHoliday} cutOffDate={cutOffDate} incentiveAmount={incentiveAmount} holidayIncentiveAmount={holidayIncentiveAmount} spIncentiveAmount={spIncentiveAmount} updateSettings={updateSettings} allHolidays={allHolidays} onAddHoliday={addCustomHoliday} onDeleteHoliday={deleteCustomHoliday} theme={theme} toggleTheme={toggleTheme} departments={departments} updateDepartments={updateDepartments} notificationsEnabled={notificationsEnabled} toggleNotifications={toggleNotifications} shifts={shifts} syncStatus={syncStatus} forceSync={forceSync} geminiApiKey={geminiApiKey} setGeminiApiKey={setGeminiApiKey} />}
+            </ErrorBoundary>
           </div>
         </main>
-        <MobileNav activeTab={activeTab} setActiveTab={setActiveTab} theme={theme} toggleTheme={toggleTheme} isViewer={isViewer} isEmployee={isEmployee} onLogout={handleLogout} />
+        <MobileNav activeTab={activeTab} setActiveTab={setActiveTab} theme={theme} toggleTheme={toggleTheme} isViewer={isViewer} isEmployee={isEmployee} onLogout={handleLogout} onStartTutorial={startTutorial} />
       </div>
       <AIChatbot context={{ employees, shifts, leaves, swapRequests, openShifts, geminiApiKey }} />
+      {tutorialState.isActive && (
+        <TutorialOverlay 
+          steps={tutorialSteps} 
+          currentStep={tutorialState.currentStep} 
+          onNext={nextTutorialStep} 
+          onPrev={prevTutorialStep} 
+          onClose={closeTutorial} 
+        />
+      )}
     </LoginGate>
   );
 }

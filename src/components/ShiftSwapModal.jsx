@@ -34,13 +34,13 @@ const ShiftSwapModal = ({ onClose, employees, shifts, swapRequests, onAddSwapReq
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem', marginBottom: '1rem' }}>
           <div>
             <label className="label">Karyawan</label>
-            <select className="input" value={empId} onChange={e => setEmpId(e.target.value)} style={{ colorScheme: 'dark', fontSize: '0.82rem' }}>
+            <select className="input" value={empId} onChange={e => setEmpId(e.target.value)} style={{ fontSize: '0.82rem' }}>
               {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
             </select>
           </div>
           <div>
             <label className="label">Tanggal</label>
-            <input type="date" className="input" value={dateStr} onChange={e => setDateStr(e.target.value)} style={{ colorScheme: 'dark', fontSize: '0.82rem' }} />
+            <input type="date" className="input" value={dateStr} onChange={e => setDateStr(e.target.value)} style={{ fontSize: '0.82rem' }} />
           </div>
         </div>
 
@@ -90,3 +90,4 @@ const ShiftSwapModal = ({ onClose, employees, shifts, swapRequests, onAddSwapReq
 };
 
 export default ShiftSwapModal;
+

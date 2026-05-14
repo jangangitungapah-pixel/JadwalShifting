@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Calendar, Users, LayoutDashboard, Settings, FileText, Sparkles, BarChart3, CalendarOff, Sun, Moon, Globe, ClipboardList, Loader, Database, DollarSign, LogOut } from 'lucide-react';
+import { Calendar, Users, LayoutDashboard, Settings, FileText, Sparkles, BarChart3, CalendarOff, Sun, Moon, Globe, ClipboardList, Loader, Database, DollarSign, LogOut, HelpCircle } from 'lucide-react';
 import { useTranslation } from '../utils/i18n.jsx';
+import { sounds } from '../utils/soundService';
 import appIconSvg from '/app-icon.svg?url';
 
-const Sidebar = ({ activeTab, setActiveTab, theme, toggleTheme, syncStatus, forceSync, isViewer, isEmployee, onLogout }) => {
+const Sidebar = ({ activeTab, setActiveTab, theme, toggleTheme, syncStatus, forceSync, isViewer, isEmployee, onLogout, onStartTutorial }) => {
   const [hoveredItem, setHoveredItem] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const { lang, setLanguage, t } = useTranslation();
@@ -85,7 +86,7 @@ const Sidebar = ({ activeTab, setActiveTab, theme, toggleTheme, syncStatus, forc
         </div>
 
         {/* Main Nav */}
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', flex: 1, overflow: 'auto' }}>
+        <nav data-tour="sidebar-nav" style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', flex: 1, overflow: 'auto' }}>
           <p style={{ fontSize: '0.65rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', padding: '0 0.5rem', marginBottom: '0.35rem' }}>Menu</p>
           {menuItems.map((item) => (<NavButton key={item.id} item={item} isActive={activeTab === item.id} />))}
 
@@ -109,6 +110,12 @@ const Sidebar = ({ activeTab, setActiveTab, theme, toggleTheme, syncStatus, forc
         <div style={{ height: '1px', background: 'var(--glass-border)', margin: '0.35rem 0' }} />
 
         {/* Theme & Lang toggles */}
+        <div style={{ display: 'flex', gap: '0.35rem', marginBottom: '0.35rem' }}>
+          <button onClick={() => { sounds.click(); onStartTutorial && onStartTutorial(); }} onMouseEnter={() => setHoveredItem('help')} onMouseLeave={() => setHoveredItem(null)}
+            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', padding: '0.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: hoveredItem === 'help' ? 'var(--color-primary-light)' : 'transparent', cursor: 'pointer', color: 'var(--color-primary)', fontFamily: 'inherit', fontSize: '0.68rem', fontWeight: '600', transition: 'all 0.2s' }}>
+            <HelpCircle size={13} /> {lang === 'id' ? 'Tur' : 'Tour'}
+          </button>
+        </div>
         <div style={{ display: 'flex', gap: '0.35rem', marginBottom: '0.35rem' }}>
           <button onClick={toggleTheme} onMouseEnter={() => setHoveredItem('theme')} onMouseLeave={() => setHoveredItem(null)}
             style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', padding: '0.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: hoveredItem === 'theme' ? 'var(--bg-card)' : 'transparent', cursor: 'pointer', color: 'var(--text-tertiary)', fontFamily: 'inherit', fontSize: '0.68rem', fontWeight: '600', transition: 'all 0.2s' }}>
