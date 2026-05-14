@@ -255,7 +255,7 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
             const isSelected = selectedIds.includes(emp.id);
 
             return (
-              <div key={emp.id} className="glass-card" style={{ padding: '1.25rem', position: 'relative', overflow: 'hidden', border: isSelected ? '1px solid var(--color-primary)' : '1px solid var(--glass-border-hover)', transition: 'all 0.2s', boxShadow: isSelected ? '0 0 0 2px rgba(99,102,241,0.2)' : 'none' }}>
+              <div key={emp.id} className="glass-card" style={{ padding: '1.25rem', position: 'relative', overflow: 'hidden', border: isSelected ? '1px solid var(--color-primary)' : '1px solid var(--glass-border-hover)', transition: 'all 0.2s', boxShadow: isSelected ? '0 0 0 2px rgba(99,102,241,0.2)' : 'none', display: 'flex', flexDirection: 'column' }}>
                 {!isViewer && !isEmployee && (
                   <div style={{ position: 'absolute', top: '1rem', right: '1rem', zIndex: 10 }}>
                     <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(emp.id)} style={{ width: '1.1rem', height: '1.1rem', cursor: 'pointer', accentColor: 'var(--color-primary)' }} />
@@ -274,7 +274,7 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
                 </div>
 
                 {/* Quick Contacts */}
-                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', minHeight: '28px' }}>
                   {emp.phone && (
                     <a href={`tel:${emp.phone}`} className="badge" style={{ background: 'rgba(52,211,153,0.1)', color: '#34D399', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.3rem 0.6rem' }}>
                       <Phone size={12} /> <span style={{ fontSize: '0.7rem' }}>{emp.phone}</span>
@@ -285,17 +285,25 @@ const EmployeeList = ({ employees, onAdd, onEdit, onDelete, shifts, departments,
                       <Mail size={12} /> <span style={{ fontSize: '0.7rem' }}>Email</span>
                     </a>
                   )}
+                  {!emp.phone && !emp.email && (
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                      <Phone size={12} /> Belum ada kontak
+                    </span>
+                  )}
                 </div>
 
                 {/* Fairness badge */}
-                <div style={{ background: 'var(--bg-elevated)', padding: '0.75rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem' }}>
+                <div style={{ background: 'var(--bg-elevated)', padding: '0.75rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem', flex: 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
                     <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Zap size={12} /> Skor Keadilan</span>
                     <span style={{ fontSize: '0.75rem', fontWeight: '700', color: scoreColor }}>{score}%</span>
                   </div>
-                  <div style={{ width: '100%', height: '4px', borderRadius: '2px', background: 'var(--bg-card)', overflow: 'hidden' }}>
+                  <div style={{ width: '100%', height: '4px', borderRadius: '2px', background: 'var(--bg-card)', overflow: 'hidden', marginBottom: '0.35rem' }}>
                     <div style={{ width: `${score}%`, height: '100%', borderRadius: '2px', background: scoreColor, transition: 'width 0.5s' }} />
                   </div>
+                  <span style={{ fontSize: '0.62rem', fontWeight: '600', color: scoreColor }}>
+                    {score >= 70 ? '● Sangat Baik' : score >= 40 ? '● Perlu Perhatian' : '● Buruk'}
+                  </span>
                 </div>
 
                 {/* Actions */}

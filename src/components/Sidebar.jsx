@@ -60,7 +60,7 @@ const Sidebar = ({ activeTab, setActiveTab, theme, toggleTheme, syncStatus, forc
   const monthNames = t('time.months').map(m => m.substring(0, 3));
 
   return (
-    <aside className="sidebar glass-heavy animate-slide-left" style={{ margin: '0.75rem', padding: '1.25rem', borderRadius: 'var(--radius-2xl)', border: '1px solid var(--glass-border)', position: 'fixed', left: 0, top: 0, bottom: 0, zIndex: 10, width: '16rem', height: 'calc(100vh - 1.5rem)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: 'var(--shadow-xl), var(--shadow-glow-primary)', overflow: 'hidden' }}>
+    <aside className="sidebar glass-heavy animate-slide-left" style={{ margin: '0.75rem', padding: '1.25rem', borderRadius: 'var(--radius-2xl)', border: '1px solid var(--glass-border)', position: 'fixed', left: 0, top: 0, bottom: 0, zIndex: 10, width: '16rem', height: 'calc(100vh - 1.5rem)', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-xl), var(--shadow-glow-primary)', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: 0, left: '10%', right: '10%', height: '1px', background: 'linear-gradient(90deg, transparent, var(--color-primary), var(--color-secondary), transparent)', opacity: 0.5 }} />
 
       <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
@@ -106,7 +106,7 @@ const Sidebar = ({ activeTab, setActiveTab, theme, toggleTheme, syncStatus, forc
       </div>
 
       {/* Bottom */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', flexShrink: 0 }}>
         <div style={{ height: '1px', background: 'var(--glass-border)', margin: '0.35rem 0' }} />
 
         {/* Theme & Lang toggles */}
