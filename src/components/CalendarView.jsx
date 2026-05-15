@@ -316,7 +316,7 @@ const CalendarView = ({ employees, shifts, updateShift, setBatchShifts, autoHoli
               </>
             )}
             {/* Header Row */}
-            <div style={{ padding: '0.7rem 1rem', borderRight: '1px solid var(--glass-border)', borderBottom: '2px solid var(--glass-border)', backgroundColor: 'var(--bg-elevated)', fontWeight: '700', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', position: 'sticky', left: 0, zIndex: 5, fontFamily: "'Outfit', sans-serif" }}>Karyawan</div>
+            <div style={{ padding: '0.7rem 1rem', paddingLeft: '1.25rem', borderBottom: '1px solid var(--glass-border)', backgroundColor: 'var(--bg-elevated)', fontWeight: '700', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', position: 'sticky', left: 0, zIndex: 5, fontFamily: "'Outfit', sans-serif", boxShadow: '4px 0 16px rgba(0,0,0,0.05)' }}>Karyawan</div>
             {datesToRender.map((date, i) => {
               const y = date.getFullYear();
               const m = date.getMonth();
@@ -327,9 +327,9 @@ const CalendarView = ({ employees, shifts, updateShift, setBatchShifts, autoHoli
               const isToday = dateStr === todayStr;
               return (
                 <div key={i} title={holiday ? `${lang === 'en' ? 'National Holiday' : 'Libur Nasional'}: ${holiday.localName}` : ''} style={{
-                  padding: viewMode === 'year' ? '0.5rem 0.1rem' : '0.5rem 0.35rem',
-                  borderBottom: holiday ? '2px solid var(--danger)' : '2px solid var(--glass-border)',
-                  borderRight: '1px solid var(--glass-border)',
+                  padding: viewMode === 'year' ? '0.5rem 0.1rem' : '0.7rem 0.35rem',
+                  borderBottom: holiday ? '2px solid var(--danger)' : '1px solid var(--glass-border)',
+                  borderRight: '1px dashed var(--glass-border)',
                   backgroundColor: holiday ? 'rgba(248, 113, 113, 0.12)' : isToday ? 'rgba(129,140,248,0.1)' : isWeekend ? 'rgba(248, 113, 113, 0.04)' : 'var(--bg-elevated)',
                   textAlign: 'center',
                   fontWeight: '600',
@@ -360,13 +360,13 @@ const CalendarView = ({ employees, shifts, updateShift, setBatchShifts, autoHoli
               <React.Fragment key={emp.id}>
                 {/* Name Cell */}
                 <div style={{ 
-                  padding: isMobile ? '0.4rem 0.5rem' : '0.6rem 0.85rem', 
-                  borderRight: '1px solid var(--glass-border)', 
+                  padding: isMobile ? '0.4rem 0.5rem' : '0.8rem 1rem', 
                   borderBottom: '1px solid var(--glass-border)', 
                   backgroundColor: rowBg, 
                   position: 'sticky', left: 0, zIndex: 4, 
+                  boxShadow: '4px 0 16px rgba(0,0,0,0.1)',
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem',
-                  borderLeft: `3px solid ${['var(--shift-pagi-text)', 'var(--shift-sore-text)', 'var(--shift-malam-text)', 'var(--color-secondary)'][empIdx % 4]}`,
+                  borderLeft: `4px solid ${['var(--shift-pagi-text)', 'var(--shift-sore-text)', 'var(--shift-malam-text)', 'var(--color-secondary)'][empIdx % 4]}`,
                 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.35rem' : '0.65rem' }}>
                     <img src={emp.avatar} alt={emp.name} style={{ width: isMobile ? '24px' : '34px', height: isMobile ? '24px' : '34px', borderRadius: isMobile ? '6px' : '10px', border: '2px solid var(--glass-border)', objectFit: 'cover', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }} />
@@ -401,28 +401,31 @@ const CalendarView = ({ employees, shifts, updateShift, setBatchShifts, autoHoli
                   return (
                     <div key={i} onClick={() => handleCellClick(emp.id, dateStr, shiftId)}
                       style={{
-                        padding: viewMode === 'year' ? '0.15rem' : '0.35rem',
-                        borderRight: '1px solid var(--glass-border)',
+                        padding: viewMode === 'year' ? '0.15rem' : '0.4rem',
+                        borderRight: '1px dashed var(--glass-border)',
                         borderBottom: '1px solid var(--glass-border)',
-                        backgroundColor: isToday ? 'rgba(129,140,248,0.06)' : isRedDay ? 'rgba(248,113,113,0.02)' : rowBg,
+                        backgroundColor: isToday ? 'rgba(129,140,248,0.08)' : isRedDay ? 'rgba(248,113,113,0.04)' : rowBg,
                         cursor: isViewer || isEmployee ? 'default' : 'pointer',
-                        transition: 'all 0.15s ease',
+                        transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
                         position: 'relative',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                       }}
-                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = isToday ? 'rgba(129,140,248,0.12)' : 'var(--bg-card-hover)'; const badge = e.currentTarget.querySelector('[data-badge]'); if (badge) { badge.style.transform = 'scale(1.15)'; badge.style.boxShadow = `0 4px 14px var(--shift-${shiftType?.id || 'pagi'}-bg)`; } }}
-                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = isToday ? 'rgba(129,140,248,0.06)' : isRedDay ? 'rgba(248,113,113,0.02)' : rowBg; const badge = e.currentTarget.querySelector('[data-badge]'); if (badge) { badge.style.transform = 'scale(1)'; badge.style.boxShadow = viewMode !== 'year' ? `0 2px 8px var(--shift-${shiftType?.id || 'pagi'}-bg)` : 'none'; } }}>
+                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = isToday ? 'rgba(129,140,248,0.12)' : 'var(--bg-card-hover)'; const badge = e.currentTarget.querySelector('[data-badge]'); if (badge) { badge.style.transform = 'scale(1.1)'; badge.style.boxShadow = `0 4px 14px var(--shift-${shiftType?.id || 'pagi'}-bg)`; } }}
+                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = isToday ? 'rgba(129,140,248,0.08)' : isRedDay ? 'rgba(248,113,113,0.04)' : rowBg; const badge = e.currentTarget.querySelector('[data-badge]'); if (badge) { badge.style.transform = 'scale(1)'; badge.style.boxShadow = viewMode !== 'year' ? `0 2px 8px var(--shift-${shiftType?.id || 'pagi'}-bg)` : 'none'; } }}>
                       {shiftType ? (
                         <div data-badge="true" style={{
                           backgroundColor: `var(--shift-${shiftType.id}-bg)`,
                           color: `var(--shift-${shiftType.id}-text)`,
                           border: `1px solid var(--shift-${shiftType.id}-border)`,
-                          padding: viewMode === 'year' ? '0.1rem' : '0.4rem 0.5rem',
-                          borderRadius: viewMode === 'year' ? '4px' : '12px',
-                          fontSize: viewMode === 'year' ? '0.55rem' : '0.78rem',
+                          padding: viewMode === 'year' ? '0.1rem' : '0.35rem 0.7rem',
+                          borderRadius: '100px',
+                          fontSize: viewMode === 'year' ? '0.55rem' : '0.72rem',
                           fontWeight: '800',
                           textAlign: 'center',
-                          height: '100%',
-                          minHeight: viewMode === 'year' ? '20px' : '34px',
+                          width: '100%',
+                          maxWidth: '90px',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -431,12 +434,12 @@ const CalendarView = ({ employees, shifts, updateShift, setBatchShifts, autoHoli
                           whiteSpace: 'nowrap',
                           fontFamily: "'Outfit', sans-serif",
                           boxShadow: viewMode !== 'year' ? `0 2px 8px var(--shift-${shiftType.id}-bg)` : 'none',
-                          transition: 'transform 0.15s ease',
+                          transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
                         }}>
                           {viewMode === 'year' ? shiftType.shortLabel.charAt(0) : (shiftType.shortLabel || shiftType.label)}
                         </div>
                       ) : (
-                        <div style={{ width: '100%', height: '100%', minHeight: viewMode === 'year' ? '20px' : '34px', border: viewMode === 'year' ? 'none' : '1px dashed rgba(255,255,255,0.03)', borderRadius: '12px' }} />
+                        <div style={{ width: '100%', height: '100%', maxWidth: '90px', borderRadius: '100px', border: viewMode === 'year' ? 'none' : '1px dashed var(--glass-border)' }} />
                       )}
                       {hasNote && <div style={{ position: 'absolute', top: '3px', right: '4px', width: '7px', height: '7px', borderRadius: '50%', background: '#FBBF24', boxShadow: '0 0 8px rgba(251,191,36,0.7)' }} title={notes[noteKey]} />}
                     </div>

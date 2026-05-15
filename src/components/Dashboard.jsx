@@ -107,7 +107,7 @@ const Dashboard = ({ employees, shifts, activityLogs, leaves, swapRequests, isEm
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
         {/* Conflicts */}
-        <div className="glass-card animate-fade-in-up delay-300" style={{ padding: '1.25rem' }}>
+        <div className="glass-card animate-fade-in-up delay-300" style={{ padding: '1.25rem', minHeight: '120px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
             <AlertTriangle size={16} style={{ color: monthlyStats.conflicts > 0 ? 'var(--danger)' : 'var(--success)' }} />
             <h3 style={{ fontSize: '0.9rem', fontWeight: '700' }}>{t('dash.conflicts')}</h3>
@@ -122,20 +122,25 @@ const Dashboard = ({ employees, shifts, activityLogs, leaves, swapRequests, isEm
           )}
         </div>
 
-        <div className="glass-card animate-fade-in-up delay-400" style={{ padding: '1.25rem' }}>
+        <div className="glass-card animate-fade-in-up delay-400" style={{ padding: '1.25rem', minHeight: '120px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
             <Zap size={16} style={{ color: '#2DD4BF' }} />
             <h3 style={{ fontSize: '0.9rem', fontWeight: '700' }}>{t('dash.fairnessScore')}</h3>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <p style={{ fontSize: '2.5rem', fontWeight: '900', background: `linear-gradient(135deg, ${fairness.overallScore >= 70 ? '#2DD4BF' : fairness.overallScore >= 40 ? '#FBBF24' : '#F87171'}, var(--text-primary))`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{fairness.overallScore}%</p>
-            <div style={{ flex: 1, height: '8px', borderRadius: '4px', background: 'var(--bg-elevated)', overflow: 'hidden' }}>
-              <div style={{ width: `${fairness.overallScore}%`, height: '100%', borderRadius: '4px', background: `linear-gradient(90deg, ${fairness.overallScore >= 70 ? '#2DD4BF' : fairness.overallScore >= 40 ? '#FBBF24' : '#F87171'}, ${fairness.overallScore >= 70 ? '#34D399' : fairness.overallScore >= 40 ? '#F59E0B' : '#EF4444'})`, transition: 'width 1s ease' }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ height: '8px', borderRadius: '4px', background: 'var(--bg-elevated)', overflow: 'hidden', marginBottom: '0.4rem' }}>
+                <div style={{ width: `${fairness.overallScore}%`, height: '100%', borderRadius: '4px', background: `linear-gradient(90deg, ${fairness.overallScore >= 70 ? '#2DD4BF' : fairness.overallScore >= 40 ? '#FBBF24' : '#F87171'}, ${fairness.overallScore >= 70 ? '#34D399' : fairness.overallScore >= 40 ? '#F59E0B' : '#EF4444'})`, transition: 'width 1s ease' }} />
+              </div>
+              <span style={{ fontSize: '0.68rem', fontWeight: '600', color: fairness.overallScore >= 70 ? '#2DD4BF' : fairness.overallScore >= 40 ? '#FBBF24' : '#F87171', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                {fairness.overallScore >= 70 ? (lang === 'en' ? '● Excellent' : '● Sangat Baik') : fairness.overallScore >= 40 ? (lang === 'en' ? '● Needs Attention' : '● Perlu Perhatian') : (lang === 'en' ? '● Poor' : '● Buruk')}
+              </span>
             </div>
           </div>
         </div>
 
-        <div className="glass-card animate-fade-in-up delay-500" style={{ padding: '1.25rem' }}>
+        <div className="glass-card animate-fade-in-up delay-500" style={{ padding: '1.25rem', minHeight: '120px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
             <Clock size={16} style={{ color: '#FBBF24' }} />
             <h3 style={{ fontSize: '0.9rem', fontWeight: '700' }}>{lang === 'en' ? 'Pending Actions' : 'Menunggu Tindakan'}</h3>
@@ -170,6 +175,17 @@ const Dashboard = ({ employees, shifts, activityLogs, leaves, swapRequests, isEm
               </PieChart>
             </ResponsiveContainer>
           ) : <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', textAlign: 'center', padding: '3rem' }}>Tidak ada data shift.</p>}
+          {/* Legend */}
+          {shiftDistribution.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', justifyContent: 'center', marginTop: '0.5rem' }}>
+              {shiftDistribution.map((entry, i) => (
+                <div key={entry.name} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: COLORS[i % COLORS.length] }} />
+                  <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', fontWeight: '500' }}>{entry.name}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Activity Log */}
@@ -179,15 +195,20 @@ const Dashboard = ({ employees, shifts, activityLogs, leaves, swapRequests, isEm
             {activityLogs.length === 0 ? (
               <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{t('dash.noActivity')}</p>
             ) : (
-              activityLogs.slice(0, 8).map((log, i) => (
+              activityLogs.slice(0, 8).map((log, i) => {
+                const isAdd = log.message?.includes('ditambahkan') || log.message?.includes('added');
+                const isDel = log.message?.includes('dihapus') || log.message?.includes('deleted');
+                const isGen = log.message?.includes('generate') || log.message?.includes('Auto') || log.message?.includes('Undo') || log.message?.includes('Redo');
+                const dotColor = isDel ? 'var(--danger)' : isAdd ? 'var(--success)' : isGen ? 'var(--warning)' : 'var(--color-primary)';
+                return (
                 <div key={log.id || i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', padding: '0.55rem 0', borderBottom: i < 7 ? '1px solid var(--glass-border)' : 'none' }}>
-                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--color-primary)', marginTop: '0.35rem', flexShrink: 0 }} />
+                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: dotColor, marginTop: '0.35rem', flexShrink: 0, boxShadow: `0 0 6px ${dotColor}` }} />
                   <div>
                     <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>{log.message}</p>
                     <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>{formatTime(log.timestamp)}</p>
                   </div>
                 </div>
-              ))
+              );})
             )}
           </div>
         </div>

@@ -115,7 +115,7 @@ const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incen
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
         {/* Theme & Language */}
-        <div className="glass-card animate-fade-in-up delay-100" style={sectionStyle}>
+        <div className="glass-card animate-fade-in-up delay-100" style={{...sectionStyle, display: 'flex', flexDirection: 'column'}}>
           {sectionTitle(<Sun size={18} style={{ color: '#FBBF24' }} />, 'Tampilan', '#FBBF24')}
           <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
             <button onClick={theme === 'dark' ? undefined : toggleTheme} style={{ flex: 1, padding: '1rem', borderRadius: 'var(--radius-lg)', cursor: 'pointer', fontFamily: 'inherit', border: `2px solid ${theme === 'dark' ? 'var(--color-primary)' : 'var(--glass-border)'}`, background: theme === 'dark' ? 'var(--color-primary-light)' : 'transparent', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s' }}>
@@ -150,21 +150,21 @@ const SettingsView = ({ autoHolidayEnabled, toggleAutoHoliday, cutOffDate, incen
             <div>
               <label className="label">{t('set.shiftIncentive')}</label>
               <div style={{ position: 'relative' }}>
-                <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontWeight: '600', fontSize: '0.9rem' }}>Rp</span>
+                <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontWeight: '600', fontSize: '0.85rem' }}>Rp</span>
                 <input type="number" step="5000" className="input" value={localIncentive} onChange={(e) => setLocalIncentive(parseInt(e.target.value) || 0)} style={{ paddingLeft: '2.5rem' }} />
               </div>
             </div>
             <div>
               <label className="label">{t('set.holidayIncentive')}</label>
               <div style={{ position: 'relative' }}>
-                <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontWeight: '600', fontSize: '0.9rem' }}>Rp</span>
+                <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontWeight: '600', fontSize: '0.85rem' }}>Rp</span>
                 <input type="number" step="5000" className="input" value={localHolidayIncentive} onChange={(e) => setLocalHolidayIncentive(parseInt(e.target.value) || 0)} style={{ paddingLeft: '2.5rem' }} />
               </div>
             </div>
             <div>
               <label className="label">{t('set.spIncentive')}</label>
               <div style={{ position: 'relative' }}>
-                <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontWeight: '600', fontSize: '0.9rem' }}>Rp</span>
+                <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontWeight: '600', fontSize: '0.85rem' }}>Rp</span>
                 <input type="number" step="5000" className="input" value={localSpIncentive} onChange={(e) => setLocalSpIncentive(parseInt(e.target.value) || 0)} style={{ paddingLeft: '2.5rem' }} />
               </div>
             </div>
